@@ -2,14 +2,13 @@ package backends
 
 import (
 	"fmt"
+	"log/slog"
 	"plugin"
-
-	log "github.com/sirupsen/logrus"
 )
 
 type CustomPlugin struct {
 	plugin       *plugin.Plugin
-	init         func(map[string]string, log.Level) error
+	init         func(map[string]string, slog.Level) error
 	getName      func() string
 	getUser      func(username, password, clientid string) (bool, error)
 	getSuperuser func(username string) (bool, error)
@@ -17,7 +16,7 @@ type CustomPlugin struct {
 	halt         func()
 }
 
-func NewCustomPlugin(authOpts map[string]string, logLevel log.Level) (*CustomPlugin, error) {
+func NewCustomPlugin(authOpts map[string]string, logLevel slog.Level) (*CustomPlugin, error) {
 	plug, err := plugin.Open(authOpts["plugin_path"])
 	if err != nil {
 		return nil, fmt.Errorf("could not init custom plugin: %s", err)
@@ -34,7 +33,7 @@ func NewCustomPlugin(authOpts map[string]string, logLevel log.Level) (*CustomPlu
 		return nil, fmt.Errorf("couldn't find func Init in plugin: %s", err)
 	}
 
-	initFunc := plInit.(func(authOpts map[string]string, logLevel log.Level) error)
+	initFunc := plInit.(func(authOpts map[string]string, logLevel slog.Level) error)
 
 	err = initFunc(authOpts, logLevel)
 	if err != nil {

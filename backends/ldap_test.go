@@ -1,9 +1,10 @@
 package backends
 
 import (
+	"testing"
+
 	. "github.com/smallfish06/mosquitto-go-auth/backends/constants"
 	. "github.com/smartystreets/goconvey/convey"
-	"testing"
 )
 
 func TestLDAP(t *testing.T) {

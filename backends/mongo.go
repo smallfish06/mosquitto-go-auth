@@ -4,11 +4,11 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 	. "github.com/smallfish06/mosquitto-go-auth/backends/constants"
 	"github.com/smallfish06/mosquitto-go-auth/backends/topics"
 	"github.com/smallfish06/mosquitto-go-auth/hashing"
@@ -46,9 +46,7 @@ type MongoUser struct {
 	Acls         []MongoAcl `bson:"acls"`
 }
 
-func NewMongo(authOpts map[string]string, logLevel log.Level, hasher hashing.HashComparer) (Mongo, error) {
-
-	log.SetLevel(logLevel)
+func NewMongo(authOpts map[string]string, logLevel slog.Level, hasher hashing.HashComparer) (Mongo, error) {
 
 	var m = Mongo{
 		Host:               "localhost",
@@ -132,7 +130,7 @@ func NewMongo(authOpts map[string]string, logLevel log.Level, hasher hashing.Has
 		// Set custom AuthSource db if supplied in config
 		if m.AuthSource != "" {
 			opts.Auth.AuthSource = m.AuthSource
-			log.Infof("mongo backend: set authentication db to: %s", m.AuthSource)
+			slog.Info("mongo backend: set authentication db", "db", m.AuthSource)
 		}
 	}
 
@@ -161,7 +159,7 @@ func (o Mongo) GetUser(username, password, clientid string) (bool, error) {
 			return false, nil
 		}
 
-		log.Debugf("Mongo get user error: %s", err)
+		slog.Debug("Mongo get user error", "error", err)
 		return false, err
 	}
 
@@ -191,7 +189,7 @@ func (o Mongo) GetSuperuser(username string) (bool, error) {
 			return false, nil
 		}
 
-		log.Debugf("Mongo get superuser error: %s", err)
+		slog.Debug("Mongo get superuser error", "error", err)
 		return false, err
 	}
 
@@ -214,7 +212,7 @@ func (o Mongo) CheckAcl(username, topic, clientid string, acc int32) (bool, erro
 			return false, nil
 		}
 
-		log.Debugf("Mongo get superuser error: %s", err)
+		slog.Debug("Mongo get superuser error", "error", err)
 		return false, err
 	}
 
@@ -231,7 +229,7 @@ func (o Mongo) CheckAcl(username, topic, clientid string, acc int32) (bool, erro
 	cur, err := ac.Find(context.TODO(), bson.M{"acc": bson.M{"$in": []int32{acc, 3}}})
 
 	if err != nil {
-		log.Debugf("Mongo check acl error: %s", err)
+		slog.Debug("Mongo check acl error", "error", err)
 		return false, err
 	}
 
@@ -247,7 +245,7 @@ func (o Mongo) CheckAcl(username, topic, clientid string, acc int32) (bool, erro
 				return true, nil
 			}
 		} else {
-			log.Errorf("mongo cursor decode error: %s", err)
+			slog.Error("mongo cursor decode error", "error", err)
 		}
 	}
 
@@ -265,7 +263,7 @@ func (o Mongo) Halt() {
 	if o.Conn != nil {
 		err := o.Conn.Disconnect(context.TODO())
 		if err != nil {
-			log.Errorf("mongo halt: %s", err)
+			slog.Error("mongo halt", "error", err)
 		}
 	}
 }

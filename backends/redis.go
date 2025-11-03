@@ -3,12 +3,12 @@ package backends
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strconv"
 	"strings"
 	"time"
 
 	goredis "github.com/go-redis/redis/v8"
-	log "github.com/sirupsen/logrus"
 	. "github.com/smallfish06/mosquitto-go-auth/backends/constants"
 	"github.com/smallfish06/mosquitto-go-auth/backends/topics"
 	"github.com/smallfish06/mosquitto-go-auth/hashing"
@@ -46,9 +46,7 @@ type Redis struct {
 	hasher           hashing.HashComparer
 }
 
-func NewRedis(authOpts map[string]string, logLevel log.Level, hasher hashing.HashComparer) (Redis, error) {
-
-	log.SetLevel(logLevel)
+func NewRedis(authOpts map[string]string, logLevel slog.Level, hasher hashing.HashComparer) (Redis, error) {
 
 	var redis = Redis{
 		Host:         "localhost",
@@ -114,7 +112,7 @@ func NewRedis(authOpts map[string]string, logLevel log.Level, hasher hashing.Has
 
 	for {
 		if _, err := redis.conn.Ping(redis.ctx).Result(); err != nil {
-			log.Errorf("ping redis error, will retry in 2s: %s", err)
+			slog.Error("ping redis error, will retry in 2s", "error", err)
 			time.Sleep(2 * time.Second)
 		} else {
 			break
@@ -151,7 +149,7 @@ func (o Redis) GetUser(username, password, _ string) (bool, error) {
 	}
 
 	if err != nil {
-		log.Debugf("redis get user error: %s", err)
+		slog.Debug("redis get user error", "error", err)
 	}
 	return ok, err
 }
@@ -191,7 +189,7 @@ func (o Redis) GetSuperuser(username string) (bool, error) {
 	}
 
 	if err != nil {
-		log.Debugf("redis get superuser error: %s", err)
+		slog.Debug("redis get superuser error", "error", err)
 	}
 
 	return ok, err
@@ -227,7 +225,7 @@ func (o Redis) CheckAcl(username, topic, clientid string, acc int32) (bool, erro
 	}
 
 	if err != nil {
-		log.Debugf("redis check acl error: %s", err)
+		slog.Debug("redis check acl error", "error", err)
 	}
 	return ok, err
 }
@@ -360,7 +358,7 @@ func (o Redis) Halt() {
 	if o.conn != nil {
 		err := o.conn.Close()
 		if err != nil {
-			log.Errorf("Redis cleanup error: %s", err)
+			slog.Error("Redis cleanup error", "error", err)
 		}
 	}
 }

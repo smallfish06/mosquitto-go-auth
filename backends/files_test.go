@@ -1,10 +1,10 @@
 package backends
 
 import (
+	"log/slog"
 	"path/filepath"
 	"testing"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/smallfish06/mosquitto-go-auth/hashing"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -13,7 +13,7 @@ func TestFilesBackend(t *testing.T) {
 	// The bulk of files testing is done in the internal files checker, we'll just check obvious initialization and defaults.
 
 	authOpts := make(map[string]string)
-	logLevel := log.DebugLevel
+	logLevel := slog.LevelDebug
 	hasher := hashing.NewHasher(authOpts, "files")
 
 	Convey("When files backend is set, missing passwords path should make NewFiles fail when registered to check users", t, func() {

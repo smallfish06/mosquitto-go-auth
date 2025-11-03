@@ -1,4 +1,4 @@
-# Forked Version of https://github.com/smallfish06/mosquitto-go-auth
+# Forked Version of https://github.com/iegomez/mosquitto-go-auth
 
 # Mosquitto Go Auth
 

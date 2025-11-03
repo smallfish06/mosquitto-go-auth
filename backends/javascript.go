@@ -1,10 +1,10 @@
 package backends
 
 import (
+	"log/slog"
 	"strconv"
 
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 	"github.com/smallfish06/mosquitto-go-auth/backends/js"
 )
 
@@ -19,9 +19,7 @@ type Javascript struct {
 	runner *js.Runner
 }
 
-func NewJavascript(authOpts map[string]string, logLevel log.Level) (*Javascript, error) {
-
-	log.SetLevel(logLevel)
+func NewJavascript(authOpts map[string]string, logLevel slog.Level) (*Javascript, error) {
 
 	javascript := &Javascript{
 		stackDepthLimit: js.DefaultStackDepthLimit,
@@ -34,7 +32,7 @@ func NewJavascript(authOpts map[string]string, logLevel log.Level) (*Javascript,
 	if stackLimit, ok := authOpts["js_stack_depth_limit"]; ok {
 		limit, err := strconv.ParseInt(stackLimit, 10, 64)
 		if err != nil {
-			log.Errorf("invalid stack depth limit %s, defaulting to %d", stackLimit, js.DefaultStackDepthLimit)
+			slog.Error("invalid stack depth limit, using default", "value", stackLimit, "default", js.DefaultStackDepthLimit)
 		} else {
 			javascript.stackDepthLimit = int(limit)
 		}
@@ -43,7 +41,7 @@ func NewJavascript(authOpts map[string]string, logLevel log.Level) (*Javascript,
 	if maxDuration, ok := authOpts["js_ms_max_duration"]; ok {
 		duration, err := strconv.ParseInt(maxDuration, 10, 64)
 		if err != nil {
-			log.Errorf("invalid stack depth limit %s, defaulting to %d", maxDuration, js.DefaultMsMaxDuration)
+			slog.Error("invalid max duration, using default", "value", maxDuration, "default", js.DefaultMsMaxDuration)
 		} else {
 			javascript.msMaxDuration = duration
 		}
@@ -104,7 +102,7 @@ func (o *Javascript) GetUser(username, password, clientid string) (bool, error) 
 
 	granted, err := o.runner.RunScript(o.userScript, params)
 	if err != nil {
-		log.Errorf("js error: %s", err)
+		slog.Error("js error", "error", err)
 	}
 
 	return granted, err
@@ -117,7 +115,7 @@ func (o *Javascript) GetSuperuser(username string) (bool, error) {
 
 	granted, err := o.runner.RunScript(o.superuserScript, params)
 	if err != nil {
-		log.Errorf("js error: %s", err)
+		slog.Error("js error", "error", err)
 	}
 
 	return granted, err
@@ -133,7 +131,7 @@ func (o *Javascript) CheckAcl(username, topic, clientid string, acc int32) (bool
 
 	granted, err := o.runner.RunScript(o.aclScript, params)
 	if err != nil {
-		log.Errorf("js error: %s", err)
+		slog.Error("js error", "error", err)
 	}
 
 	return granted, err

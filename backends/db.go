@@ -2,11 +2,11 @@ package backends
 
 import (
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 )
 
 // OpenDatabase opens the database and performs a ping to make sure the
@@ -25,7 +25,7 @@ func OpenDatabase(dsn, engine string, tries int, maxLifeTime int64) (*sqlx.DB, e
 
 	for tries != 0 {
 		if err = db.Ping(); err != nil {
-			log.Errorf("ping database %s error, will retry in 2s: %s", engine, err)
+			slog.Error("ping database error, will retry in 2s", "engine", engine, "error", err)
 			time.Sleep(2 * time.Second)
 		} else {
 			break

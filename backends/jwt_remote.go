@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log/slog"
 	h "net/http"
 	"net/url"
 	"regexp"
@@ -14,7 +15,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 )
 
 type remoteJWTChecker struct {
@@ -112,7 +112,7 @@ func NewRemoteJWTChecker(authOpts map[string]string, options tokenOptions, versi
 
 	if hostWhitelist, ok := authOpts["jwt_host_whitelist"]; ok {
 		if hostWhitelist == whitelistMagicForAnyHost {
-			log.Warning(
+			slog.Warn(
 				"Backend host whitelisting is turned off. This is not secure and should not be used in " +
 					"the production environment")
 			checker.hostWhitelist = append(checker.hostWhitelist, whitelistMagicForAnyHost)
@@ -157,7 +157,7 @@ func NewRemoteJWTChecker(authOpts map[string]string, options tokenOptions, versi
 		if timeout, err := strconv.Atoi(timeoutString); err == nil {
 			checker.timeout = timeout
 		} else {
-			log.Errorf("unable to parse timeout: %s", err)
+			slog.Error("unable to parse timeout", "error", err)
 		}
 	}
 
@@ -181,7 +181,7 @@ func (o *remoteJWTChecker) GetUser(token string) (bool, error) {
 		username, err := getUsernameForToken(o.options, token, o.options.skipUserExpiration)
 
 		if err != nil {
-			log.Printf("jwt remote get user error: %s", err)
+			slog.Error("jwt remote get user error", "error", err)
 			return false, err
 		}
 
@@ -208,7 +208,7 @@ func (o *remoteJWTChecker) GetSuperuser(token string) (bool, error) {
 		username, err := getUsernameForToken(o.options, token, o.options.skipUserExpiration)
 
 		if err != nil {
-			log.Printf("jwt remote get superuser error: %s", err)
+			slog.Error("jwt remote get superuser error", "error", err)
 			return false, err
 		}
 
@@ -240,7 +240,7 @@ func (o *remoteJWTChecker) CheckAcl(token, topic, clientid string, acc int32) (b
 		username, err := getUsernameForToken(o.options, token, o.options.skipACLExpiration)
 
 		if err != nil {
-			log.Printf("jwt remote check acl error: %s", err)
+			slog.Error("jwt remote check acl error", "error", err)
 			return false, err
 		}
 
@@ -288,7 +288,7 @@ func (o *remoteJWTChecker) jwtRequest(uri, token string, dataMap map[string]inte
 		dataJSON, err := json.Marshal(dataMap)
 
 		if err != nil {
-			log.Errorf("marshal error: %s", err)
+			slog.Error("marshal error", "error", err)
 			return false, err
 		}
 
@@ -296,7 +296,7 @@ func (o *remoteJWTChecker) jwtRequest(uri, token string, dataMap map[string]inte
 		req, err = h.NewRequest(o.httpMethod, fullURI, contentReader)
 
 		if err != nil {
-			log.Errorf("req error: %s", err)
+			slog.Error("req error", "error", err)
 			return false, err
 		}
 		req.Header.Set("Content-Type", "application/json")
@@ -308,7 +308,7 @@ func (o *remoteJWTChecker) jwtRequest(uri, token string, dataMap map[string]inte
 		req.Header.Set("User-Agent", o.userAgent)
 
 		if err != nil {
-			log.Errorf("req error: %s", err)
+			slog.Error("req error", "error", err)
 			return false, err
 		}
 	}
@@ -318,21 +318,21 @@ func (o *remoteJWTChecker) jwtRequest(uri, token string, dataMap map[string]inte
 	resp, err = o.client.Do(req)
 
 	if err != nil {
-		log.Errorf("error: %v", err)
+		slog.Error("error", "error", err)
 		return false, err
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 
 	if err != nil {
-		log.Errorf("read error: %s", err)
+		slog.Error("read error", "error", err)
 		return false, err
 	}
 
 	defer resp.Body.Close()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		log.Infof("error code: %d", resp.StatusCode)
+		slog.Info("error code", "status", resp.StatusCode)
 		if resp.StatusCode >= 500 {
 			err = fmt.Errorf("error code: %d", resp.StatusCode)
 		}
@@ -341,31 +341,31 @@ func (o *remoteJWTChecker) jwtRequest(uri, token string, dataMap map[string]inte
 
 	if o.responseMode == "text" {
 
-		//For test response, we expect "ok" or an error message.
+		// For test response, we expect "ok" or an error message.
 		if string(body) != "ok" {
-			log.Infof("api error: %s", string(body))
+			slog.Info("api error", "body", string(body))
 			return false, nil
 		}
 
 	} else if o.responseMode == "json" {
 
-		//For json response, we expect Ok and Error fields.
+		// For json response, we expect Ok and Error fields.
 		response := Response{Ok: false, Error: ""}
 		err = json.Unmarshal(body, &response)
 
 		if err != nil {
-			log.Errorf("unmarshal error: %s", err)
+			slog.Error("unmarshal error", "error", err)
 			return false, err
 		}
 
 		if !response.Ok {
-			log.Infof("api error: %s", response.Error)
+			slog.Info("api error", "error", response.Error)
 			return false, nil
 		}
 
 	}
 
-	log.Debugf("jwt request approved for %s", token)
+	slog.Debug("jwt request approved", "token", token)
 	return true, nil
 }
 

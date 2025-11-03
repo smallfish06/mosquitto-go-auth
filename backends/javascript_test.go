@@ -1,9 +1,9 @@
 package backends
 
 import (
+	"log/slog"
 	"testing"
 
-	log "github.com/sirupsen/logrus"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -21,7 +21,7 @@ func TestJavascript(t *testing.T) {
 			badOpts["js_user_script"] = authOpts["js_user_script"]
 			badOpts["js_superuser_script"] = authOpts["js_superuser_script"]
 
-			_, err := NewJavascript(badOpts, log.DebugLevel)
+			_, err := NewJavascript(badOpts, slog.LevelDebug)
 			So(err, ShouldNotBeNil)
 		})
 
@@ -32,11 +32,11 @@ func TestJavascript(t *testing.T) {
 			badOpts["js_superuser_script"] = authOpts["js_superuser_script"]
 			badOpts["js_acl_script_path"] = "../test-files/js/nothing_here.js"
 
-			_, err := NewJavascript(badOpts, log.DebugLevel)
+			_, err := NewJavascript(badOpts, slog.LevelDebug)
 			So(err, ShouldNotBeNil)
 		})
 
-		javascript, err := NewJavascript(authOpts, log.DebugLevel)
+		javascript, err := NewJavascript(authOpts, slog.LevelDebug)
 		So(err, ShouldBeNil)
 
 		Convey("User checks should work", func() {

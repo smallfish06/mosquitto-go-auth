@@ -1,9 +1,9 @@
 package backends
 
 import (
+	"log/slog"
 	"testing"
 
-	log "github.com/sirupsen/logrus"
 	. "github.com/smallfish06/mosquitto-go-auth/backends/constants"
 	"github.com/smallfish06/mosquitto-go-auth/hashing"
 	. "github.com/smartystreets/goconvey/convey"
@@ -19,7 +19,7 @@ func TestMysql(t *testing.T) {
 	authOpts["mysql_allow_native_passwords"] = "true"
 
 	Convey("If mandatory params are not set initialization should fail", t, func() {
-		_, err := NewMysql(authOpts, log.DebugLevel, hashing.NewHasher(authOpts, "mysql"))
+		_, err := NewMysql(authOpts, slog.LevelDebug, hashing.NewHasher(authOpts, "mysql"))
 		So(err, ShouldBeError)
 	})
 
@@ -32,7 +32,7 @@ func TestMysql(t *testing.T) {
 	authOpts["mysql_aclquery"] = "SELECT test_acl.topic FROM test_acl, test_user WHERE test_user.username = ? AND test_acl.test_user_id = test_user.id AND (rw >= ? or rw = 3)"
 
 	Convey("Given valid params NewMysql should return a Mysql backend instance", t, func() {
-		mysql, err := NewMysql(authOpts, log.DebugLevel, hashing.NewHasher(authOpts, "mysql"))
+		mysql, err := NewMysql(authOpts, slog.LevelDebug, hashing.NewHasher(authOpts, "mysql"))
 		So(err, ShouldBeNil)
 
 		// Empty db
@@ -224,7 +224,7 @@ func TestMysqlTls(t *testing.T) {
 	authOpts["mysql_aclquery"] = "SELECT test_acl.topic FROM test_acl, test_user WHERE test_user.username = ? AND test_acl.test_user_id = test_user.id AND (rw >= ? or rw = 3)"
 
 	Convey("Given custom ssl disabled, it should fail", t, func() {
-		mysql, err := NewMysql(authOpts, log.DebugLevel, hashing.NewHasher(authOpts, "mysql"))
+		mysql, err := NewMysql(authOpts, slog.LevelDebug, hashing.NewHasher(authOpts, "mysql"))
 		So(err, ShouldBeError)
 		So(err.Error(), ShouldContainSubstring, "Access denied for user")
 		So(mysql.DB, ShouldBeNil)
@@ -234,7 +234,7 @@ func TestMysqlTls(t *testing.T) {
 	authOpts["mysql_sslrootcert"] = "/test-files/certificates/ca.pem"
 
 	Convey("Given custom ssl enabled, it should work without a client certificate", t, func() {
-		mysql, err := NewMysql(authOpts, log.DebugLevel, hashing.NewHasher(authOpts, "mysql"))
+		mysql, err := NewMysql(authOpts, slog.LevelDebug, hashing.NewHasher(authOpts, "mysql"))
 		So(err, ShouldBeNil)
 
 		rows, err := mysql.DB.Query("SHOW status like 'Ssl_cipher';")
@@ -269,7 +269,7 @@ func TestMysqlMutualTls(t *testing.T) {
 	authOpts["mysql_sslrootcert"] = "/test-files/certificates/ca.pem"
 
 	Convey("Given custom ssl enabled and no client certificate is given, it should fail", t, func() {
-		mysql, err := NewMysql(authOpts, log.DebugLevel, hashing.NewHasher(authOpts, "mysql"))
+		mysql, err := NewMysql(authOpts, slog.LevelDebug, hashing.NewHasher(authOpts, "mysql"))
 		So(err, ShouldBeError)
 		So(err.Error(), ShouldContainSubstring, "Access denied for user")
 		So(mysql.DB, ShouldBeNil)
@@ -279,7 +279,7 @@ func TestMysqlMutualTls(t *testing.T) {
 	authOpts["mysql_sslkey"] = "/test-files/certificates/db/unauthorized-second-client-key.pem"
 
 	Convey("Given custom ssl enabled and unauthorized client certificate is given, it should fail", t, func() {
-		mysql, err := NewMysql(authOpts, log.DebugLevel, hashing.NewHasher(authOpts, "mysql"))
+		mysql, err := NewMysql(authOpts, slog.LevelDebug, hashing.NewHasher(authOpts, "mysql"))
 		So(err, ShouldBeError)
 		So(err.Error(), ShouldContainSubstring, "Access denied for user")
 		So(mysql.DB, ShouldBeNil)
@@ -289,7 +289,7 @@ func TestMysqlMutualTls(t *testing.T) {
 	authOpts["mysql_sslkey"] = "/test-files/certificates/grpc/client-key.pem"
 
 	Convey("Given custom ssl enabled and invalid client certificate is given, it should fail", t, func() {
-		mysql, err := NewMysql(authOpts, log.DebugLevel, hashing.NewHasher(authOpts, "mysql"))
+		mysql, err := NewMysql(authOpts, slog.LevelDebug, hashing.NewHasher(authOpts, "mysql"))
 		So(err, ShouldBeError)
 		So(err.Error(), ShouldContainSubstring, "invalid connection")
 		So(mysql.DB, ShouldBeNil)
@@ -299,7 +299,7 @@ func TestMysqlMutualTls(t *testing.T) {
 	authOpts["mysql_sslkey"] = "/test-files/certificates/db/client-key.pem"
 
 	Convey("Given custom ssl enabled and client certificate is given, it should work", t, func() {
-		mysql, err := NewMysql(authOpts, log.DebugLevel, hashing.NewHasher(authOpts, "mysql"))
+		mysql, err := NewMysql(authOpts, slog.LevelDebug, hashing.NewHasher(authOpts, "mysql"))
 		So(err, ShouldBeNil)
 
 		rows, err := mysql.DB.Query("SHOW status like 'Ssl_cipher';")

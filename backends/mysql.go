@@ -6,13 +6,14 @@ import (
 	"database/sql"
 	"fmt"
 	"io/ioutil"
+	"log/slog"
 	"strconv"
 	"strings"
 
 	mq "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
+
 	"github.com/smallfish06/mosquitto-go-auth/backends/topics"
 	"github.com/smallfish06/mosquitto-go-auth/hashing"
 )
@@ -41,9 +42,7 @@ type Mysql struct {
 	connectTries int
 }
 
-func NewMysql(authOpts map[string]string, logLevel log.Level, hasher hashing.HashComparer) (Mysql, error) {
-
-	log.SetLevel(logLevel)
+func NewMysql(authOpts map[string]string, logLevel slog.Level, hasher hashing.HashComparer) (Mysql, error) {
 
 	// Set defaults for Mysql
 
@@ -140,7 +139,7 @@ func NewMysql(authOpts map[string]string, logLevel log.Level, hasher hashing.Has
 		mysql.SSLRootCert = sslRootCert
 	} else {
 		if customSSL {
-			log.Warn("MySQL backend warning: TLS was disabled due to missing root certificate (mysql_sslrootcert)")
+			slog.Warn("MySQL backend warning: TLS was disabled due to missing root certificate (mysql_sslrootcert)")
 			customSSL = false
 		}
 	}
@@ -196,7 +195,7 @@ func NewMysql(authOpts map[string]string, logLevel log.Level, hasher hashing.Has
 				clientCert = append(clientCert, certs)
 				tlsConfig.Certificates = clientCert
 			} else {
-				log.Warn("MySQL backend warning: mutual TLS was disabled due to missing client certificate (mysql_sslcert) or client key (mysql_sslkey)")
+				slog.Warn("MySQL backend warning: mutual TLS was disabled due to missing client certificate (mysql_sslcert) or client key (mysql_sslkey)")
 			}
 		}
 
@@ -210,7 +209,7 @@ func NewMysql(authOpts map[string]string, logLevel log.Level, hasher hashing.Has
 		connectTries, err := strconv.Atoi(tries)
 
 		if err != nil {
-			log.Warnf("invalid mysql connect tries options: %s", err)
+			slog.Warn("invalid mysql connect tries options", "error", err)
 		} else {
 			mysql.connectTries = connectTries
 		}
@@ -247,12 +246,12 @@ func (o Mysql) GetUser(username, password, clientid string) (bool, error) {
 			return false, nil
 		}
 
-		log.Debugf("MySql get user error: %s", err)
+		slog.Debug("MySql get user error", "error", err)
 		return false, err
 	}
 
 	if !pwHash.Valid {
-		log.Debugf("MySql get user error: user %s not found", username)
+		slog.Debug("MySql get user error: user not found", "username", username)
 		return false, nil
 	}
 
@@ -281,12 +280,12 @@ func (o Mysql) GetSuperuser(username string) (bool, error) {
 			return false, nil
 		}
 
-		log.Debugf("MySql get superuser error: %s", err)
+		slog.Debug("MySql get superuser error", "error", err)
 		return false, err
 	}
 
 	if !count.Valid {
-		log.Debugf("MySql get superuser error: user %s not found", username)
+		slog.Debug("MySql get superuser error: user not found", "username", username)
 		return false, nil
 	}
 
@@ -310,7 +309,7 @@ func (o Mysql) CheckAcl(username, topic, clientid string, acc int32) (bool, erro
 	err := o.DB.Select(&acls, o.AclQuery, username, acc)
 
 	if err != nil {
-		log.Debugf("MySql check acl error: %s", err)
+		slog.Debug("MySql check acl error", "error", err)
 		return false, err
 	}
 
@@ -336,7 +335,7 @@ func (o Mysql) Halt() {
 	if o.DB != nil {
 		err := o.DB.Close()
 		if err != nil {
-			log.Errorf("Mysql cleanup error: %s", err)
+			slog.Error("Mysql cleanup error", "error", err)
 		}
 	}
 }

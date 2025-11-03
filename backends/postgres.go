@@ -3,13 +3,13 @@ package backends
 import (
 	"database/sql"
 	"fmt"
+	"log/slog"
 	"strconv"
 	"strings"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 	"github.com/smallfish06/mosquitto-go-auth/backends/topics"
 	"github.com/smallfish06/mosquitto-go-auth/hashing"
 )
@@ -35,9 +35,7 @@ type Postgres struct {
 	connectTries int
 }
 
-func NewPostgres(authOpts map[string]string, logLevel log.Level, hasher hashing.HashComparer) (Postgres, error) {
-
-	log.SetLevel(logLevel)
+func NewPostgres(authOpts map[string]string, logLevel slog.Level, hasher hashing.HashComparer) (Postgres, error) {
 
 	// Set defaults for postgres
 
@@ -101,7 +99,7 @@ func NewPostgres(authOpts map[string]string, logLevel log.Level, hasher hashing.
 		switch sslmode {
 		case "verify-full", "verify-ca", "require", "disable":
 		default:
-			log.Warnf("PG backend warning: using unknown pg_sslmode: '%s'", sslmode)
+			slog.Warn("PG backend warning: using unknown pg_sslmode", "sslmode", sslmode)
 		}
 		postgres.SSLMode = sslmode
 	} else {
@@ -157,7 +155,7 @@ func NewPostgres(authOpts map[string]string, logLevel log.Level, hasher hashing.
 		connectTries, err := strconv.Atoi(tries)
 
 		if err != nil {
-			log.Warnf("invalid postgres connect tries options: %s", err)
+			slog.Warn("invalid postgres connect tries options", "error", err)
 		} else {
 			postgres.connectTries = connectTries
 		}
@@ -194,12 +192,12 @@ func (o Postgres) GetUser(username, password, clientid string) (bool, error) {
 			return false, nil
 		}
 
-		log.Debugf("PG get user error: %s", err)
+		slog.Debug("PG get user error", "error", err)
 		return false, err
 	}
 
 	if !pwHash.Valid {
-		log.Debugf("PG get user error: user %s not found", username)
+		slog.Debug("PG get user error: user not found", "username", username)
 		return false, err
 	}
 
@@ -228,12 +226,12 @@ func (o Postgres) GetSuperuser(username string) (bool, error) {
 			return false, nil
 		}
 
-		log.Debugf("PG get superuser error: %s", err)
+		slog.Debug("PG get superuser error", "error", err)
 		return false, err
 	}
 
 	if !count.Valid {
-		log.Debugf("PG get superuser error: user %s not found", username)
+		slog.Debug("PG get superuser error: user not found", "username", username)
 		return false, nil
 	}
 
@@ -258,7 +256,7 @@ func (o Postgres) CheckAcl(username, topic, clientid string, acc int32) (bool, e
 	err := o.DB.Select(&acls, o.AclQuery, username, acc)
 
 	if err != nil {
-		log.Debugf("PG check acl error: %s", err)
+		slog.Debug("PG check acl error", "error", err)
 		return false, err
 	}
 
@@ -284,7 +282,7 @@ func (o Postgres) Halt() {
 	if o.DB != nil {
 		err := o.DB.Close()
 		if err != nil {
-			log.Errorf("Postgres cleanup error: %s", err)
+			slog.Error("Postgres cleanup error", "error", err)
 		}
 	}
 }

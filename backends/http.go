@@ -6,13 +6,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log/slog"
 	h "net/http"
 	"net/url"
 	"strconv"
 	"time"
 
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 )
 
 type HTTP struct {
@@ -36,11 +36,9 @@ type HTTPResponse struct {
 	Error string `json:"error"`
 }
 
-func NewHTTP(authOpts map[string]string, logLevel log.Level, version string) (HTTP, error) {
+func NewHTTP(authOpts map[string]string, logLevel slog.Level, version string) (HTTP, error) {
 
-	log.SetLevel(logLevel)
-
-	//Initialize with defaults
+	// Initialize with defaults
 	var http = HTTP{
 		WithTLS:      false,
 		VerifyPeer:   false,
@@ -121,7 +119,7 @@ func NewHTTP(authOpts map[string]string, logLevel log.Level, version string) (HT
 		if timeout, err := strconv.Atoi(timeoutString); err == nil {
 			http.Timeout = timeout
 		} else {
-			log.Errorf("unable to parse timeout: %s", err)
+			slog.Error("unable to parse timeout", "error", err)
 		}
 	}
 
@@ -220,7 +218,7 @@ func (o HTTP) httpRequest(uri, username string, dataMap map[string]interface{}, 
 
 	if o.ParamsMode == "form" {
 		if o.httpMethod != h.MethodPost && o.httpMethod != h.MethodPut {
-			log.Errorf("error form param only supported for POST/PUT.")
+			slog.Error("error form param only supported for POST/PUT")
 			err = fmt.Errorf("form only supported for POST/PUT, error code: %d", 500)
 			return false, err
 		}
@@ -231,7 +229,7 @@ func (o HTTP) httpRequest(uri, username string, dataMap map[string]interface{}, 
 		dataJson, err = json.Marshal(dataMap)
 
 		if err != nil {
-			log.Errorf("marshal error: %s", err)
+			slog.Error("marshal error", "error", err)
 			return false, err
 		}
 
@@ -240,7 +238,7 @@ func (o HTTP) httpRequest(uri, username string, dataMap map[string]interface{}, 
 		req, err = h.NewRequest(o.httpMethod, fullUri, contentReader)
 
 		if err != nil {
-			log.Errorf("req error: %s", err)
+			slog.Error("req error", "error", err)
 			return false, err
 		}
 
@@ -251,21 +249,21 @@ func (o HTTP) httpRequest(uri, username string, dataMap map[string]interface{}, 
 	}
 
 	if err != nil {
-		log.Errorf("http request error: %s", err)
+		slog.Error("http request error", "error", err)
 		return false, err
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 
 	if err != nil {
-		log.Errorf("read error: %s", err)
+		slog.Error("read error", "error", err)
 		return false, err
 	}
 
 	defer resp.Body.Close()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		log.Infof("error code: %d", resp.StatusCode)
+		slog.Info("error code", "status", resp.StatusCode)
 		if resp.StatusCode >= 500 {
 			err = fmt.Errorf("error code: %d", resp.StatusCode)
 		}
@@ -274,41 +272,41 @@ func (o HTTP) httpRequest(uri, username string, dataMap map[string]interface{}, 
 
 	if o.ResponseMode == "text" {
 
-		//For test response, we expect "ok" or an error message.
+		// For test response, we expect "ok" or an error message.
 		if string(body) != "ok" {
-			log.Infof("api error: %s", string(body))
+			slog.Info("api error", "body", string(body))
 			return false, nil
 		}
 
 	} else if o.ResponseMode == "json" {
 
-		//For json response, we expect Ok and Error fields.
+		// For json response, we expect Ok and Error fields.
 		response := HTTPResponse{Ok: false, Error: ""}
 		err := json.Unmarshal(body, &response)
 
 		if err != nil {
-			log.Errorf("unmarshal error: %s", err)
+			slog.Error("unmarshal error", "error", err)
 			return false, err
 		}
 
 		if !response.Ok {
-			log.Infof("api error: %s", response.Error)
+			slog.Info("api error", "error", response.Error)
 			return false, nil
 		}
 
 	}
 
-	log.Debugf("http request approved for %s", username)
+	slog.Debug("http request approved", "username", username)
 	return true, nil
 
 }
 
-//GetName returns the backend's name
+// GetName returns the backend's name
 func (o HTTP) GetName() string {
 	return "HTTP"
 }
 
-//Halt does nothing for http as there's no cleanup needed.
+// Halt does nothing for http as there's no cleanup needed.
 func (o HTTP) Halt() {
-	//Do nothing
+	// Do nothing
 }

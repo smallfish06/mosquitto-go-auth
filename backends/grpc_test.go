@@ -5,10 +5,10 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"io/ioutil"
+	"log/slog"
 	"net"
 	"testing"
 
-	log "github.com/sirupsen/logrus"
 	gs "github.com/smallfish06/mosquitto-go-auth/grpc"
 	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc"
@@ -101,14 +101,14 @@ func TestGRPC(t *testing.T) {
 			Convey("when grpc_fail_on_dial_error is set to true, it should return an error", func(c C) {
 				wrongOpts["grpc_fail_on_dial_error"] = "true"
 
-				_, err := NewGRPC(wrongOpts, log.DebugLevel)
+				_, err := NewGRPC(wrongOpts, slog.LevelDebug)
 				c.So(err, ShouldNotBeNil)
 			})
 
 			Convey("when grpc_fail_on_dial_error is not set to true, it should not return an error", func(c C) {
 				wrongOpts["grpc_fail_on_dial_error"] = "false"
 
-				g, err := NewGRPC(wrongOpts, log.DebugLevel)
+				g, err := NewGRPC(wrongOpts, slog.LevelDebug)
 				c.So(err, ShouldBeNil)
 
 				Convey("but it should return an error on any user or acl check", func(c C) {
@@ -138,7 +138,7 @@ func TestGRPC(t *testing.T) {
 		})
 
 		Convey("given a correct host grpc backend should be able to initialize", func(c C) {
-			g, err := NewGRPC(authOpts, log.DebugLevel)
+			g, err := NewGRPC(authOpts, slog.LevelDebug)
 			c.So(err, ShouldBeNil)
 			So(g.timeout, ShouldEqual, 100)
 
@@ -165,7 +165,7 @@ func TestGRPC(t *testing.T) {
 
 							Convey("but if we disable superuser checks it should return false", func(c C) {
 								authOpts["grpc_disable_superuser"] = "true"
-								g, err = NewGRPC(authOpts, log.DebugLevel)
+								g, err = NewGRPC(authOpts, slog.LevelDebug)
 								c.So(err, ShouldBeNil)
 
 								auth, err = g.GetSuperuser(grpcSuperuser)
@@ -223,7 +223,7 @@ func TestGRPCTls(t *testing.T) {
 		authOpts["grpc_fail_on_dial_error"] = "true"
 
 		Convey("Given client connects without TLS, it should fail", func() {
-			g, err := NewGRPC(authOpts, log.DebugLevel)
+			g, err := NewGRPC(authOpts, slog.LevelDebug)
 			c.So(err, ShouldBeError)
 			c.So(err.Error(), ShouldEqual, "context deadline exceeded")
 			c.So(g, ShouldBeNil)
@@ -232,7 +232,7 @@ func TestGRPCTls(t *testing.T) {
 		authOpts["grpc_ca_cert"] = "/test-files/certificates/db/ca.pem"
 
 		Convey("Given client connects with TLS but with wrong CA, it should fail", func() {
-			g, err := NewGRPC(authOpts, log.DebugLevel)
+			g, err := NewGRPC(authOpts, slog.LevelDebug)
 			c.So(err, ShouldBeError)
 			c.So(err.Error(), ShouldEqual, "context deadline exceeded")
 			c.So(g, ShouldBeNil)
@@ -241,7 +241,7 @@ func TestGRPCTls(t *testing.T) {
 		authOpts["grpc_ca_cert"] = "/test-files/certificates/ca.pem"
 
 		Convey("Given client connects with TLS, it should work", func() {
-			g, err := NewGRPC(authOpts, log.DebugLevel)
+			g, err := NewGRPC(authOpts, slog.LevelDebug)
 			c.So(err, ShouldBeNil)
 			c.So(g, ShouldNotBeNil)
 		})
@@ -280,7 +280,7 @@ func TestGRPCMutualTls(t *testing.T) {
 		authOpts["grpc_fail_on_dial_error"] = "true"
 
 		Convey("Given client connects without TLS, it should fail", func() {
-			g, err := NewGRPC(authOpts, log.DebugLevel)
+			g, err := NewGRPC(authOpts, slog.LevelDebug)
 			c.So(err, ShouldBeError)
 			c.So(err.Error(), ShouldEqual, "context deadline exceeded")
 			c.So(g, ShouldBeNil)
@@ -289,7 +289,7 @@ func TestGRPCMutualTls(t *testing.T) {
 		authOpts["grpc_ca_cert"] = "/test-files/certificates/ca.pem"
 
 		Convey("Given client connects with TLS but without a client certificate, it should fail", func() {
-			g, err := NewGRPC(authOpts, log.DebugLevel)
+			g, err := NewGRPC(authOpts, slog.LevelDebug)
 			c.So(err, ShouldBeError)
 			c.So(err.Error(), ShouldEqual, "context deadline exceeded")
 			c.So(g, ShouldBeNil)
@@ -299,7 +299,7 @@ func TestGRPCMutualTls(t *testing.T) {
 		authOpts["grpc_tls_key"] = "/test-files/certificates/db/client-key.pem"
 
 		Convey("Given client connects with mTLS but with client cert from wrong CA, it should fail", func() {
-			g, err := NewGRPC(authOpts, log.DebugLevel)
+			g, err := NewGRPC(authOpts, slog.LevelDebug)
 			c.So(err, ShouldBeError)
 			c.So(err.Error(), ShouldEqual, "context deadline exceeded")
 			c.So(g, ShouldBeNil)
@@ -309,7 +309,7 @@ func TestGRPCMutualTls(t *testing.T) {
 		authOpts["grpc_tls_key"] = "/test-files/certificates/grpc/client-key.pem"
 
 		Convey("Given client connects with mTLS, it should work", func() {
-			g, err := NewGRPC(authOpts, log.DebugLevel)
+			g, err := NewGRPC(authOpts, slog.LevelDebug)
 			c.So(err, ShouldBeNil)
 			c.So(g, ShouldNotBeNil)
 		})

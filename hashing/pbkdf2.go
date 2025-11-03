@@ -11,8 +11,8 @@ import (
 	"strconv"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/pbkdf2"
+	"log/slog"
 )
 
 type pbkdf2Hasher struct {
@@ -87,7 +87,7 @@ func (h pbkdf2Hasher) Compare(password string, passwordHash string) bool {
 		algorithm = hashSplit[1]
 		iterations, err = strconv.Atoi(hashSplit[2])
 		if err != nil {
-			log.Errorf("iterations error: %s", err)
+			slog.Error("iterations error", "error", err)
 			return false
 		}
 
@@ -98,14 +98,14 @@ func (h pbkdf2Hasher) Compare(password string, passwordHash string) bool {
 			var err error
 			salt, err = base64.StdEncoding.DecodeString(hashSplit[3])
 			if err != nil {
-				log.Errorf("base64 salt error: %s", err)
+				slog.Error("base64 salt error", "error", err)
 				return false
 			}
 		}
 
 		hashedPassword, err = base64.StdEncoding.DecodeString(hashSplit[4])
 		if err != nil {
-			log.Errorf("base64 hash decoding error: %s", err)
+			slog.Error("base64 hash decoding error", "error", err)
 			return false
 		}
 		keyLen = len(hashedPassword)
@@ -126,7 +126,7 @@ func (h pbkdf2Hasher) Compare(password string, passwordHash string) bool {
 				case "l":
 					keyLen, _ = strconv.Atoi(val)
 				default:
-					log.Errorf("unknown options key (\"%s\")", key)
+					slog.Error("unknown options key", "key", key)
 					return false
 				}
 			}
@@ -139,14 +139,14 @@ func (h pbkdf2Hasher) Compare(password string, passwordHash string) bool {
 			var err error
 			salt, err = base64.StdEncoding.WithPadding(base64.NoPadding).DecodeString(hashSplit[2])
 			if err != nil {
-				log.Errorf("base64 salt error: %s", err)
+				slog.Error("base64 salt error", "error", err)
 				return false
 			}
 		}
 
 		hashedPassword, err = base64.StdEncoding.WithPadding(base64.NoPadding).DecodeString(hashSplit[3])
 	} else {
-		log.Errorf("invalid PBKDF2 hash supplied, unrecognized format \"%s\"", hashSplit[0])
+		slog.Error("invalid PBKDF2 hash supplied, unrecognized format", "format", hashSplit[0])
 		return false
 	}
 
@@ -154,7 +154,7 @@ func (h pbkdf2Hasher) Compare(password string, passwordHash string) bool {
 	hashSplit = h.getFields(newHash)
 	newHashedPassword, err := base64.StdEncoding.DecodeString(hashSplit[4])
 	if err != nil {
-		log.Errorf("base64 salt error: %s", err)
+		slog.Error("base64 salt error", "error", err)
 		return false
 	}
 

@@ -2,9 +2,9 @@ package backends
 
 import (
 	"context"
+	"log/slog"
 	"testing"
 
-	log "github.com/sirupsen/logrus"
 	. "github.com/smallfish06/mosquitto-go-auth/backends/constants"
 	"github.com/smallfish06/mosquitto-go-auth/hashing"
 	"github.com/stretchr/testify/assert"
@@ -37,7 +37,7 @@ func TestRedisCluster(t *testing.T) {
 }
 
 func testRedis(ctx context.Context, t *testing.T, authOpts map[string]string) {
-	redis, err := NewRedis(authOpts, log.DebugLevel, hashing.NewHasher(authOpts, "redis"))
+	redis, err := NewRedis(authOpts, slog.LevelDebug, hashing.NewHasher(authOpts, "redis"))
 	assert.Nil(t, err)
 
 	// Empty db

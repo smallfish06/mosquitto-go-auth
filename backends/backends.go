@@ -2,10 +2,11 @@ package backends
 
 import (
 	"fmt"
+	"log/slog"
+	"os"
 	"strings"
 
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 	"github.com/smallfish06/mosquitto-go-auth/hashing"
 )
 
@@ -74,7 +75,7 @@ var allowedBackendsOptsPrefix = map[string]string{
 }
 
 // Initialize sets general options, tries to build the backends and register their checkers.
-func Initialize(authOpts map[string]string, logLevel log.Level, version string) (*Backends, error) {
+func Initialize(authOpts map[string]string, logLevel slog.Level, version string) (*Backends, error) {
 
 	b := &Backends{
 		backends:          make(map[string]Backend),
@@ -127,7 +128,7 @@ func Initialize(authOpts map[string]string, logLevel log.Level, version string) 
 	return b, nil
 }
 
-func (b *Backends) addBackends(authOpts map[string]string, logLevel log.Level, backends []string, version string) error {
+func (b *Backends) addBackends(authOpts map[string]string, logLevel slog.Level, backends []string, version string) error {
 	// Store given backends as given to order them when checking.
 	//
 	// This allows to sort user checking, and first exhaust superuser/acl checks of a given backend before checking the next one,
@@ -147,97 +148,109 @@ func (b *Backends) addBackends(authOpts map[string]string, logLevel log.Level, b
 		case postgresBackend:
 			beIface, err = NewPostgres(authOpts, logLevel, hasher)
 			if err != nil {
-				log.Fatalf("backend register error: couldn't initialize %s backend with error %s.", bename, err)
+				slog.Error("backend register error: couldn't initialize backend", "backend", bename, "error", err)
+				os.Exit(1)
 			} else {
-				log.Infof("backend registered: %s", beIface.GetName())
+				slog.Info("backend registered", "name", beIface.GetName())
 				b.backends[postgresBackend] = beIface.(Postgres)
 			}
 		case jwtBackend:
 			beIface, err = NewJWT(authOpts, logLevel, hasher, version)
 			if err != nil {
-				log.Fatalf("Backend register error: couldn't initialize %s backend with error %s.", bename, err)
+				slog.Error("backend register error: couldn't initialize backend", "backend", bename, "error", err)
+				os.Exit(1)
 			} else {
-				log.Infof("Backend registered: %s", beIface.GetName())
+				slog.Info("backend registered", "name", beIface.GetName())
 				b.backends[jwtBackend] = beIface.(*JWT)
 			}
 		case filesBackend:
 			beIface, err = NewFiles(authOpts, logLevel, hasher)
 			if err != nil {
-				log.Fatalf("Backend register error: couldn't initialize %s backend with error %s.", bename, err)
+				slog.Error("backend register error: couldn't initialize backend", "backend", bename, "error", err)
+				os.Exit(1)
 			} else {
-				log.Infof("Backend registered: %s", beIface.GetName())
+				slog.Info("backend registered", "name", beIface.GetName())
 				b.backends[filesBackend] = beIface.(*Files)
 			}
 		case redisBackend:
 			beIface, err = NewRedis(authOpts, logLevel, hasher)
 			if err != nil {
-				log.Fatalf("Backend register error: couldn't initialize %s backend with error %s.", bename, err)
+				slog.Error("backend register error: couldn't initialize backend", "backend", bename, "error", err)
+				os.Exit(1)
 			} else {
-				log.Infof("Backend registered: %s", beIface.GetName())
+				slog.Info("backend registered", "name", beIface.GetName())
 				b.backends[redisBackend] = beIface.(Redis)
 			}
 		case mysqlBackend:
 			beIface, err = NewMysql(authOpts, logLevel, hasher)
 			if err != nil {
-				log.Fatalf("Backend register error: couldn't initialize %s backend with error %s.", bename, err)
+				slog.Error("backend register error: couldn't initialize backend", "backend", bename, "error", err)
+				os.Exit(1)
 			} else {
-				log.Infof("Backend registered: %s", beIface.GetName())
+				slog.Info("backend registered", "name", beIface.GetName())
 				b.backends[mysqlBackend] = beIface.(Mysql)
 			}
 		case httpBackend:
 			beIface, err = NewHTTP(authOpts, logLevel, version)
 			if err != nil {
-				log.Fatalf("Backend register error: couldn't initialize %s backend with error %s.", bename, err)
+				slog.Error("backend register error: couldn't initialize backend", "backend", bename, "error", err)
+				os.Exit(1)
 			} else {
-				log.Infof("Backend registered: %s", beIface.GetName())
+				slog.Info("backend registered", "name", beIface.GetName())
 				b.backends[httpBackend] = beIface.(HTTP)
 			}
 		case sqliteBackend:
 			beIface, err = NewSqlite(authOpts, logLevel, hasher)
 			if err != nil {
-				log.Fatalf("Backend register error: couldn't initialize %s backend with error %s.", bename, err)
+				slog.Error("backend register error: couldn't initialize backend", "backend", bename, "error", err)
+				os.Exit(1)
 			} else {
-				log.Infof("Backend registered: %s", beIface.GetName())
+				slog.Info("backend registered", "name", beIface.GetName())
 				b.backends[sqliteBackend] = beIface.(Sqlite)
 			}
 		case mongoBackend:
 			beIface, err = NewMongo(authOpts, logLevel, hasher)
 			if err != nil {
-				log.Fatalf("Backend register error: couldn't initialize %s backend with error %s.", bename, err)
+				slog.Error("backend register error: couldn't initialize backend", "backend", bename, "error", err)
+				os.Exit(1)
 			} else {
-				log.Infof("Backend registered: %s", beIface.GetName())
+				slog.Info("backend registered", "name", beIface.GetName())
 				b.backends[mongoBackend] = beIface.(Mongo)
 			}
 		case grpcBackend:
 			beIface, err = NewGRPC(authOpts, logLevel)
 			if err != nil {
-				log.Fatalf("Backend register error: couldn't initialize %s backend with error %s.", bename, err)
+				slog.Error("backend register error: couldn't initialize backend", "backend", bename, "error", err)
+				os.Exit(1)
 			} else {
-				log.Infof("Backend registered: %s", beIface.GetName())
+				slog.Info("backend registered", "name", beIface.GetName())
 				b.backends[grpcBackend] = beIface.(*GRPC)
 			}
 		case jsBackend:
 			beIface, err = NewJavascript(authOpts, logLevel)
 			if err != nil {
-				log.Fatalf("Backend register error: couldn't initialize %s backend with error %s.", bename, err)
+				slog.Error("backend register error: couldn't initialize backend", "backend", bename, "error", err)
+				os.Exit(1)
 			} else {
-				log.Infof("Backend registered: %s", beIface.GetName())
+				slog.Info("backend registered", "name", beIface.GetName())
 				b.backends[jsBackend] = beIface.(*Javascript)
 			}
 		case ldapBackend:
 			beIface, err = NewLDAP(authOpts, logLevel)
 			if err != nil {
-				log.Fatalf("Backend register error: couldn't initialize %s backend with error %s.", bename, err)
+				slog.Error("backend register error: couldn't initialize backend", "backend", bename, "error", err)
+				os.Exit(1)
 			} else {
-				log.Infof("Backend registered: %s", beIface.GetName())
+				slog.Info("backend registered", "name", beIface.GetName())
 				b.backends[ldapBackend] = beIface.(LDAP)
 			}
 		case pluginBackend:
 			beIface, err = NewCustomPlugin(authOpts, logLevel)
 			if err != nil {
-				log.Fatalf("Backend register error: couldn't initialize %s backend with error %s.", bename, err)
+				slog.Error("backend register error: couldn't initialize backend", "backend", bename, "error", err)
+				os.Exit(1)
 			} else {
-				log.Infof("Backend registered: %s", beIface.GetName())
+				slog.Info("backend registered", "name", beIface.GetName())
 				b.backends[pluginBackend] = beIface.(*CustomPlugin)
 			}
 		default:
@@ -263,14 +276,14 @@ func (b *Backends) setCheckers(authOpts map[string]string) error {
 				switch check {
 				case aclCheck:
 					b.aclCheckers = append(b.aclCheckers, name)
-					log.Infof("registered acl checker: %s", name)
+					slog.Info("registered acl checker", "name", name)
 				case userCheck:
 					b.userCheckers = append(b.userCheckers, name)
-					log.Infof("registered user checker: %s", name)
+					slog.Info("registered user checker", "name", name)
 				case superuserCheck:
 					if !b.disableSuperuser {
 						b.superuserCheckers = append(b.superuserCheckers, name)
-						log.Infof("registered superuser checker: %s", name)
+						slog.Info("registered superuser checker", "name", name)
 					}
 				default:
 					return fmt.Errorf("unsupported check %s found for backend %s", check, name)
@@ -278,13 +291,13 @@ func (b *Backends) setCheckers(authOpts map[string]string) error {
 			}
 		} else {
 			b.aclCheckers = append(b.aclCheckers, name)
-			log.Infof("registered acl checker: %s", name)
+			slog.Info("registered acl checker", "name", name)
 			b.userCheckers = append(b.userCheckers, name)
-			log.Infof("registered user checker: %s", name)
+			slog.Info("registered user checker", "name", name)
 
 			if !b.disableSuperuser {
 				b.superuserCheckers = append(b.superuserCheckers, name)
-				log.Infof("registered superuser checker: %s", name)
+				slog.Info("registered superuser checker", "name", name)
 			}
 		}
 	}
@@ -310,7 +323,7 @@ func (b *Backends) setPrefixes(authOpts map[string]string, backends []string) {
 	prefixesStr, ok := authOpts["prefixes"]
 
 	if !ok {
-		log.Warn("Error: prefixes enabled but no options given, defaulting to prefixes disabled.")
+		slog.Warn("prefixes enabled but no options given, defaulting to prefixes disabled")
 		b.checkPrefix = false
 		b.stripPrefix = false
 
@@ -320,7 +333,7 @@ func (b *Backends) setPrefixes(authOpts map[string]string, backends []string) {
 	prefixes := strings.Split(strings.Replace(prefixesStr, " ", "", -1), ",")
 
 	if len(prefixes) != len(backends) {
-		log.Errorf("Error: got %d backends and %d prefixes, defaulting to prefixes disabled.", len(backends), len(prefixes))
+		slog.Error("backend and prefix count mismatch, defaulting to prefixes disabled", "backends", len(backends), "prefixes", len(prefixes))
 		b.checkPrefix = false
 		b.stripPrefix = false
 
@@ -335,7 +348,7 @@ func (b *Backends) setPrefixes(authOpts map[string]string, backends []string) {
 		b.prefixes[prefixes[i]] = backend
 	}
 
-	log.Infof("prefixes enabled for backends %s with prefixes %s.", authOpts["backends"], authOpts["prefixes"])
+	slog.Info("prefixes enabled", "backends", authOpts["backends"], "prefixes", authOpts["prefixes"])
 	b.checkPrefix = true
 }
 
@@ -344,7 +357,7 @@ func (b *Backends) lookupPrefix(username string) (bool, string) {
 	if strings.Index(username, "_") > 0 {
 		userPrefix := username[0:strings.Index(username, "_")]
 		if prefix, ok := b.prefixes[userPrefix]; ok {
-			log.Debugf("Found prefix for user %s, using backend %s.", username, prefix)
+			slog.Debug("found prefix for user", "username", username, "backend", prefix)
 			return true, prefix
 		}
 	}
@@ -402,7 +415,7 @@ func (b *Backends) AuthUnpwdCheck(username, password, clientid string) (bool, er
 
 	authenticated, err = backend.GetUser(username, password, clientid)
 	if authenticated && err == nil {
-		log.Debugf("user %s authenticated with backend %s", username, backend.GetName())
+		slog.Debug("user authenticated", "username", username, "backend", backend.GetName())
 	}
 
 	return authenticated, err
@@ -414,10 +427,10 @@ func (b *Backends) checkAuth(username, password, clientid string) (bool, error) 
 	for _, bename := range b.userCheckers {
 		var backend = b.backends[bename]
 
-		log.Debugf("checking user %s with backend %s", username, backend.GetName())
+		slog.Debug("checking user", "username", username, "backend", backend.GetName())
 
 		if ok, getUserErr := backend.GetUser(username, password, clientid); ok && getUserErr == nil {
-			log.Debugf("user %s authenticated with backend %s", username, backend.GetName())
+			slog.Debug("user authenticated", "username", username, "backend", backend.GetName())
 
 			return true, nil
 		} else if getUserErr != nil && err == nil {
@@ -456,12 +469,12 @@ func (b *Backends) AuthAclCheck(clientid, username, topic string, acc int) (bool
 
 	// Short circuit checks when superusers are disabled.
 	if !b.disableSuperuser && checkRegistered(bename, b.superuserCheckers) {
-		log.Debugf("Superuser check with backend %s", backend.GetName())
+		slog.Debug("superuser check", "backend", backend.GetName())
 
 		aclCheck, err = backend.GetSuperuser(username)
 
 		if aclCheck && err == nil {
-			log.Debugf("superuser %s acl authenticated with backend %s", username, backend.GetName())
+			slog.Debug("superuser acl authenticated", "username", username, "backend", backend.GetName())
 		}
 	}
 	// If not superuser, check acl.
@@ -470,16 +483,16 @@ func (b *Backends) AuthAclCheck(clientid, username, topic string, acc int) (bool
 			return false, fmt.Errorf("backend %s not registered to check acls", bename)
 		}
 
-		log.Debugf("Acl check with backend %s", backend.GetName())
+		slog.Debug("acl check", "backend", backend.GetName())
 		if ok, checkACLErr := backend.CheckAcl(username, topic, clientid, int32(acc)); ok && checkACLErr == nil {
 			aclCheck = true
-			log.Debugf("user %s acl authenticated with backend %s", username, backend.GetName())
+			slog.Debug("user acl authenticated", "username", username, "backend", backend.GetName())
 		} else if checkACLErr != nil && err == nil {
 			err = checkACLErr
 		}
 	}
 
-	log.Debugf("Acl is %t for user %s", aclCheck, username)
+	slog.Debug("acl check result", "granted", aclCheck, "username", username)
 	return aclCheck, err
 }
 
@@ -502,9 +515,9 @@ func (b *Backends) exhaustBackendsInOrder(username, topic, clientid string, acc 
 		var backend = b.backends[bename]
 
 		if !b.disableSuperuser && checkRegistered(bename, b.superuserCheckers) {
-			log.Debugf("superuser check with backend %s", backend.GetName())
+			slog.Debug("superuser check", "backend", backend.GetName())
 			if ok, getSuperuserErr := backend.GetSuperuser(username); ok && getSuperuserErr == nil {
-				log.Debugf("superuser %s acl authenticated with backend %s", username, backend.GetName())
+				slog.Debug("superuser acl authenticated", "username", username, "backend", backend.GetName())
 
 				return true, nil
 			} else if getSuperuserErr != nil && err == nil {
@@ -513,9 +526,9 @@ func (b *Backends) exhaustBackendsInOrder(username, topic, clientid string, acc 
 		}
 
 		if checkRegistered(bename, b.aclCheckers) {
-			log.Debugf("acl check with backend %s", backend.GetName())
+			slog.Debug("acl check", "backend", backend.GetName())
 			if ok, checkACLErr := backend.CheckAcl(username, topic, clientid, int32(acc)); ok && checkACLErr == nil {
-				log.Debugf("user %s acl authenticated with backend %s", username, backend.GetName())
+				slog.Debug("user acl authenticated", "username", username, "backend", backend.GetName())
 
 				return true, nil
 			} else if checkACLErr != nil && err == nil {
@@ -536,9 +549,9 @@ func (b *Backends) checkSuperuserThenACL(username, topic, clientid string, acc i
 		for _, bename := range b.superuserCheckers {
 			var backend = b.backends[bename]
 
-			log.Debugf("superuser check with backend %s", backend.GetName())
+			slog.Debug("superuser check", "backend", backend.GetName())
 			if ok, getSuperuserErr := backend.GetSuperuser(username); ok && getSuperuserErr == nil {
-				log.Debugf("superuser %s acl authenticated with backend %s", username, backend.GetName())
+				slog.Debug("superuser acl authenticated", "username", username, "backend", backend.GetName())
 
 				return true, nil
 			} else if getSuperuserErr != nil && err == nil {
@@ -550,9 +563,9 @@ func (b *Backends) checkSuperuserThenACL(username, topic, clientid string, acc i
 	for _, bename := range b.aclCheckers {
 		var backend = b.backends[bename]
 
-		log.Debugf("Acl check with backend %s", backend.GetName())
+		slog.Debug("acl check", "backend", backend.GetName())
 		if ok, checkACLErr := backend.CheckAcl(username, topic, clientid, int32(acc)); ok && checkACLErr == nil {
-			log.Debugf("user %s acl authenticated with backend %s", username, backend.GetName())
+			slog.Debug("user acl authenticated", "username", username, "backend", backend.GetName())
 
 			return true, nil
 		} else if checkACLErr != nil && err == nil {

@@ -2,10 +2,10 @@ package backends
 
 import (
 	"fmt"
+	"log/slog"
 
 	jwtGo "github.com/golang-jwt/jwt/v5"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 	"github.com/smallfish06/mosquitto-go-auth/hashing"
 )
 
@@ -40,8 +40,7 @@ const (
 	claimsIssKey      = "iss"
 )
 
-func NewJWT(authOpts map[string]string, logLevel log.Level, hasher hashing.HashComparer, version string) (*JWT, error) {
-	log.SetLevel(logLevel)
+func NewJWT(authOpts map[string]string, logLevel slog.Level, hasher hashing.HashComparer, version string) (*JWT, error) {
 
 	jwt := &JWT{}
 
@@ -134,7 +133,7 @@ func getJWTClaims(secret string, tokenStr string, skipExpiration bool) (*jwtGo.M
 	expirationError := false
 	if err != nil {
 		if !skipExpiration {
-			log.Debugf("jwt parse error: %s", err)
+			slog.Debug("jwt parse error", "error", err)
 			return nil, err
 		}
 
@@ -149,7 +148,7 @@ func getJWTClaims(secret string, tokenStr string, skipExpiration bool) (*jwtGo.M
 
 	claims, ok := jwtToken.Claims.(*jwtGo.MapClaims)
 	if !ok {
-		log.Debugf("jwt error: expected *MapClaims, got %T", jwtToken.Claims)
+		slog.Debug("jwt error: expected *MapClaims", "type", jwtToken.Claims)
 		return nil, errors.New("got strange claims")
 	}
 
@@ -170,7 +169,7 @@ func getUsernameForToken(options tokenOptions, tokenStr string, skipExpiration b
 
 	usernameString, ok := username.(string)
 	if !ok {
-		log.Debugf("jwt error: username expected to be string, got %T", username)
+		slog.Debug("jwt error: username expected to be string", "type", username)
 		return "", errors.New("got strange username")
 	}
 
@@ -200,7 +199,7 @@ func getIssForToken(options tokenOptions, tokenStr string, skipExpiration bool) 
 
 	issString, ok := iss.(string)
 	if !ok {
-		log.Debugf("jwt error: iss expected to be string, got %T", iss)
+		slog.Debug("jwt error: iss expected to be string", "type", iss)
 		return "", errors.New("got strange iss")
 	}
 

@@ -1,8 +1,9 @@
 package backends
 
 import (
+	"log/slog"
+
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 	"github.com/smallfish06/mosquitto-go-auth/backends/files"
 	"github.com/smallfish06/mosquitto-go-auth/hashing"
 )
@@ -12,8 +13,7 @@ type filesJWTChecker struct {
 	options tokenOptions
 }
 
-func NewFilesJWTChecker(authOpts map[string]string, logLevel log.Level, hasher hashing.HashComparer, options tokenOptions) (jwtChecker, error) {
-	log.SetLevel(logLevel)
+func NewFilesJWTChecker(authOpts map[string]string, logLevel slog.Level, hasher hashing.HashComparer, options tokenOptions) (jwtChecker, error) {
 
 	/*	We could ask for a file listing available users with no password, but that gives very little value
 		versus just assuming users in the ACL file are valid ones, while general rules apply to any user.
@@ -47,7 +47,7 @@ func (o *filesJWTChecker) CheckAcl(token, topic, clientid string, acc int32) (bo
 	username, err := getUsernameForToken(o.options, token, o.options.skipACLExpiration)
 
 	if err != nil {
-		log.Printf("jwt get user error: %s", err)
+		slog.Error("jwt get user error", "error", err)
 		return false, err
 	}
 
