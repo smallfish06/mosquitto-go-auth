@@ -1,7 +1,6 @@
 package backends
 
 import (
-	"log/slog"
 	"testing"
 
 	. "github.com/smallfish06/mosquitto-go-auth/backends/constants"
@@ -17,7 +16,7 @@ func TestPostgres(t *testing.T) {
 	authOpts["pg_port"] = "5432"
 
 	Convey("If mandatory params are not set initialization should fail", t, func() {
-		_, err := NewPostgres(authOpts, slog.LevelDebug, hashing.NewHasher(authOpts, "postgres"))
+		_, err := NewPostgres(authOpts, hashing.NewHasher(authOpts, "postgres"))
 		So(err, ShouldBeError)
 	})
 
@@ -31,7 +30,7 @@ func TestPostgres(t *testing.T) {
 	authOpts["pg_aclquery"] = "SELECT test_acl.topic FROM test_acl, test_user WHERE test_user.username = $1 AND test_acl.test_user_id = test_user.id AND (rw = $2 or rw = 3)"
 
 	Convey("Given valid params NewPostgres should return a Postgres backend instance", t, func() {
-		postgres, err := NewPostgres(authOpts, slog.LevelDebug, hashing.NewHasher(authOpts, "postgres"))
+		postgres, err := NewPostgres(authOpts, hashing.NewHasher(authOpts, "postgres"))
 		So(err, ShouldBeNil)
 
 		// Empty db
@@ -215,7 +214,7 @@ func TestPostgresTls(t *testing.T) {
 	authOpts["pg_aclquery"] = "SELECT test_acl.topic FROM test_acl, test_user WHERE test_user.username = $1 AND test_acl.test_user_id = test_user.id AND (rw = $2 or rw = 3)"
 
 	Convey("Given custom ssl disabled, it should fail", t, func() {
-		postgres, err := NewPostgres(authOpts, slog.LevelDebug, hashing.NewHasher(authOpts, "postgres"))
+		postgres, err := NewPostgres(authOpts, hashing.NewHasher(authOpts, "postgres"))
 		So(err, ShouldBeError)
 		So(err.Error(), ShouldContainSubstring, "pg_hba.conf rejects connection")
 		So(postgres.DB, ShouldBeNil)
@@ -225,7 +224,7 @@ func TestPostgresTls(t *testing.T) {
 	authOpts["pg_sslrootcert"] = "/test-files/certificates/ca.pem"
 
 	Convey("Given custom ssl enabled, it should work without a client certificate", t, func() {
-		postgres, err := NewPostgres(authOpts, slog.LevelDebug, hashing.NewHasher(authOpts, "postgres"))
+		postgres, err := NewPostgres(authOpts, hashing.NewHasher(authOpts, "postgres"))
 		So(err, ShouldBeNil)
 
 		rows, err := postgres.DB.Query("SELECT cipher FROM pg_stat_activity JOIN pg_stat_ssl USING(pid);")
@@ -255,7 +254,7 @@ func TestPostgresMutualTls(t *testing.T) {
 	authOpts["pg_sslrootcert"] = "/test-files/certificates/ca.pem"
 
 	Convey("Given custom ssl enabled and no client certificate is given, it should fail", t, func() {
-		postgres, err := NewPostgres(authOpts, slog.LevelDebug, hashing.NewHasher(authOpts, "postgres"))
+		postgres, err := NewPostgres(authOpts, hashing.NewHasher(authOpts, "postgres"))
 		So(err, ShouldBeError)
 		So(err.Error(), ShouldEqual, "PG backend error: couldn't open db: couldn't ping database postgres: pq: connection requires a valid client certificate")
 		So(postgres.DB, ShouldBeNil)
@@ -265,7 +264,7 @@ func TestPostgresMutualTls(t *testing.T) {
 	authOpts["pg_sslkey"] = "/test-files/certificates/grpc/client-key.pem"
 
 	Convey("Given custom ssl enabled and invalid client certificate is given, it should fail", t, func() {
-		postgres, err := NewPostgres(authOpts, slog.LevelDebug, hashing.NewHasher(authOpts, "postgres"))
+		postgres, err := NewPostgres(authOpts, hashing.NewHasher(authOpts, "postgres"))
 		So(err, ShouldBeError)
 		So(err.Error(), ShouldEqual, "PG backend error: couldn't open db: couldn't ping database postgres: pq: connection requires a valid client certificate")
 		So(postgres.DB, ShouldBeNil)
@@ -275,7 +274,7 @@ func TestPostgresMutualTls(t *testing.T) {
 	authOpts["pg_sslkey"] = "/test-files/certificates/db/client-key.pem"
 
 	Convey("Given custom ssl enabled and client certificate is given, it should work", t, func() {
-		postgres, err := NewPostgres(authOpts, slog.LevelDebug, hashing.NewHasher(authOpts, "postgres"))
+		postgres, err := NewPostgres(authOpts, hashing.NewHasher(authOpts, "postgres"))
 		So(err, ShouldBeNil)
 
 		rows, err := postgres.DB.Query("SELECT cipher FROM pg_stat_activity JOIN pg_stat_ssl USING(pid);")
