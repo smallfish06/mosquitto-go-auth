@@ -55,7 +55,7 @@ RUN set -ex; \
 FROM --platform=$BUILDPLATFORM golang:latest AS go_auth_builder
 
 ENV CGO_CFLAGS="-I/usr/local/include -fPIC"
-ENV CGO_LDFLAGS="-shared -Wl,-unresolved-symbols=ignore-all"
+ENV CGO_LDFLAGS="-shared -Wl,-unresolved-symbols=ignore-all -fuse-ld=bfd"
 ENV CGO_ENABLED=1
 
 # Bring TARGETPLATFORM to the build scope
