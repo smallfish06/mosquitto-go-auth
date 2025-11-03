@@ -6,15 +6,15 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/iegomez/mosquitto-go-auth/backends/topics"
-	"github.com/iegomez/mosquitto-go-auth/hashing"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"github.com/smallfish06/mosquitto-go-auth/backends/topics"
+	"github.com/smallfish06/mosquitto-go-auth/hashing"
 )
 
-//Postgres holds all fields of the postgres db connection.
+// Postgres holds all fields of the postgres db connection.
 type Postgres struct {
 	DB             *sqlx.DB
 	Host           string
@@ -39,7 +39,7 @@ func NewPostgres(authOpts map[string]string, logLevel log.Level, hasher hashing.
 
 	log.SetLevel(logLevel)
 
-	//Set defaults for postgres
+	// Set defaults for postgres
 
 	pgOk := true
 	missingOptions := ""
@@ -120,12 +120,12 @@ func NewPostgres(authOpts map[string]string, logLevel log.Level, hasher hashing.
 		postgres.SSLRootCert = sslRootCert
 	}
 
-	//Exit if any mandatory option is missing.
+	// Exit if any mandatory option is missing.
 	if !pgOk {
 		return postgres, errors.Errorf("PG backend error: missing options: %s", missingOptions)
 	}
 
-	//Build the dsn string and try to connect to the db.
+	// Build the dsn string and try to connect to the db.
 	connStr := fmt.Sprintf("user=%s password=%s dbname=%s host=%s port=%s", postgres.User, postgres.Password, postgres.DBName, postgres.Host, postgres.Port)
 
 	switch postgres.SSLMode {
@@ -182,7 +182,7 @@ func NewPostgres(authOpts map[string]string, logLevel log.Level, hasher hashing.
 
 }
 
-//GetUser checks that the username exists and the given password hashes to the same password.
+// GetUser checks that the username exists and the given password hashes to the same password.
 func (o Postgres) GetUser(username, password, clientid string) (bool, error) {
 
 	var pwHash sql.NullString
@@ -211,10 +211,10 @@ func (o Postgres) GetUser(username, password, clientid string) (bool, error) {
 
 }
 
-//GetSuperuser checks that the username meets the superuser query.
+// GetSuperuser checks that the username meets the superuser query.
 func (o Postgres) GetSuperuser(username string) (bool, error) {
 
-	//If there's no superuser query, return false.
+	// If there's no superuser query, return false.
 	if o.SuperuserQuery == "" {
 		return false, nil
 	}
@@ -245,10 +245,10 @@ func (o Postgres) GetSuperuser(username string) (bool, error) {
 
 }
 
-//CheckAcl gets all acls for the username and tries to match against topic, acc, and username/clientid if needed.
+// CheckAcl gets all acls for the username and tries to match against topic, acc, and username/clientid if needed.
 func (o Postgres) CheckAcl(username, topic, clientid string, acc int32) (bool, error) {
 
-	//If there's no acl query, assume all privileges for all users.
+	// If there's no acl query, assume all privileges for all users.
 	if o.AclQuery == "" {
 		return true, nil
 	}
@@ -274,12 +274,12 @@ func (o Postgres) CheckAcl(username, topic, clientid string, acc int32) (bool, e
 
 }
 
-//GetName returns the backend's name
+// GetName returns the backend's name
 func (o Postgres) GetName() string {
 	return "Postgres"
 }
 
-//Halt closes the mysql connection.
+// Halt closes the mysql connection.
 func (o Postgres) Halt() {
 	if o.DB != nil {
 		err := o.DB.Close()

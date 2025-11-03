@@ -10,14 +10,14 @@ import (
 	"strings"
 
 	mq "github.com/go-sql-driver/mysql"
-	"github.com/iegomez/mosquitto-go-auth/backends/topics"
-	"github.com/iegomez/mosquitto-go-auth/hashing"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"github.com/smallfish06/mosquitto-go-auth/backends/topics"
+	"github.com/smallfish06/mosquitto-go-auth/hashing"
 )
 
-//Mysql holds all fields of the Mysql db connection.
+// Mysql holds all fields of the Mysql db connection.
 type Mysql struct {
 	DB                   *sqlx.DB
 	Host                 string
@@ -45,7 +45,7 @@ func NewMysql(authOpts map[string]string, logLevel log.Level, hasher hashing.Has
 
 	log.SetLevel(logLevel)
 
-	//Set defaults for Mysql
+	// Set defaults for Mysql
 
 	mysqlOk := true
 	missingOptions := ""
@@ -145,7 +145,7 @@ func NewMysql(authOpts map[string]string, logLevel log.Level, hasher hashing.Has
 		}
 	}
 
-	//If the protocol is a unix socket, we need to set the address as the socket path. If it's tcp, then set the address using host and port.
+	// If the protocol is a unix socket, we need to set the address as the socket path. If it's tcp, then set the address using host and port.
 	addr := fmt.Sprintf("%s:%s", mysql.Host, mysql.Port)
 	if mysql.Protocol == "unix" {
 		if mysql.SocketPath != "" {
@@ -156,7 +156,7 @@ func NewMysql(authOpts map[string]string, logLevel log.Level, hasher hashing.Has
 		}
 	}
 
-	//Exit if any mandatory option is missing.
+	// Exit if any mandatory option is missing.
 	if !mysqlOk {
 		return mysql, errors.Errorf("MySql backend error: missing options: %s", missingOptions)
 	}
@@ -235,7 +235,7 @@ func NewMysql(authOpts map[string]string, logLevel log.Level, hasher hashing.Has
 
 }
 
-//GetUser checks that the username exists and the given password hashes to the same password.
+// GetUser checks that the username exists and the given password hashes to the same password.
 func (o Mysql) GetUser(username, password, clientid string) (bool, error) {
 
 	var pwHash sql.NullString
@@ -264,10 +264,10 @@ func (o Mysql) GetUser(username, password, clientid string) (bool, error) {
 
 }
 
-//GetSuperuser checks that the username meets the superuser query.
+// GetSuperuser checks that the username meets the superuser query.
 func (o Mysql) GetSuperuser(username string) (bool, error) {
 
-	//If there's no superuser query, return false.
+	// If there's no superuser query, return false.
 	if o.SuperuserQuery == "" {
 		return false, nil
 	}
@@ -298,9 +298,9 @@ func (o Mysql) GetSuperuser(username string) (bool, error) {
 
 }
 
-//CheckAcl gets all acls for the username and tries to match against topic, acc, and username/clientid if needed.
+// CheckAcl gets all acls for the username and tries to match against topic, acc, and username/clientid if needed.
 func (o Mysql) CheckAcl(username, topic, clientid string, acc int32) (bool, error) {
-	//If there's no acl query, assume all privileges for all users.
+	// If there's no acl query, assume all privileges for all users.
 	if o.AclQuery == "" {
 		return true, nil
 	}
@@ -326,12 +326,12 @@ func (o Mysql) CheckAcl(username, topic, clientid string, acc int32) (bool, erro
 
 }
 
-//GetName returns the backend's name
+// GetName returns the backend's name
 func (o Mysql) GetName() string {
 	return "Mysql"
 }
 
-//Halt closes the mysql connection.
+// Halt closes the mysql connection.
 func (o Mysql) Halt() {
 	if o.DB != nil {
 		err := o.DB.Close()

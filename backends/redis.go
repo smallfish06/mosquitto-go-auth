@@ -8,10 +8,10 @@ import (
 	"time"
 
 	goredis "github.com/go-redis/redis/v8"
-	. "github.com/iegomez/mosquitto-go-auth/backends/constants"
-	"github.com/iegomez/mosquitto-go-auth/backends/topics"
-	"github.com/iegomez/mosquitto-go-auth/hashing"
 	log "github.com/sirupsen/logrus"
+	. "github.com/smallfish06/mosquitto-go-auth/backends/constants"
+	"github.com/smallfish06/mosquitto-go-auth/backends/topics"
+	"github.com/smallfish06/mosquitto-go-auth/hashing"
 )
 
 type RedisClient interface {
@@ -135,18 +135,18 @@ func isMovedError(err error) bool {
 	return false
 }
 
-//GetUser checks that the username exists and the given password hashes to the same password.
+// GetUser checks that the username exists and the given password hashes to the same password.
 func (o Redis) GetUser(username, password, _ string) (bool, error) {
 	ok, err := o.getUser(username, password)
 	if err == nil {
 		return ok, nil
 	}
 
-	//If using Redis Cluster, reload state and attempt once more.
+	// If using Redis Cluster, reload state and attempt once more.
 	if isMovedError(err) {
 		o.conn.ReloadState(o.ctx)
 
-		//Retry once.
+		// Retry once.
 		ok, err = o.getUser(username, password)
 	}
 
@@ -171,7 +171,7 @@ func (o Redis) getUser(username, password string) (bool, error) {
 	return false, nil
 }
 
-//GetSuperuser checks that the key username:su exists and has value "true".
+// GetSuperuser checks that the key username:su exists and has value "true".
 func (o Redis) GetSuperuser(username string) (bool, error) {
 	if o.disableSuperuser {
 		return false, nil
@@ -182,11 +182,11 @@ func (o Redis) GetSuperuser(username string) (bool, error) {
 		return ok, nil
 	}
 
-	//If using Redis Cluster, reload state and attempt once more.
+	// If using Redis Cluster, reload state and attempt once more.
 	if isMovedError(err) {
 		o.conn.ReloadState(o.ctx)
 
-		//Retry once.
+		// Retry once.
 		ok, err = o.getSuperuser(username)
 	}
 
@@ -218,11 +218,11 @@ func (o Redis) CheckAcl(username, topic, clientid string, acc int32) (bool, erro
 		return ok, nil
 	}
 
-	//If using Redis Cluster, reload state and attempt once more.
+	// If using Redis Cluster, reload state and attempt once more.
 	if isMovedError(err) {
 		o.conn.ReloadState(o.ctx)
 
-		//Retry once.
+		// Retry once.
 		ok, err = o.checkAcl(username, topic, clientid, acc)
 	}
 
@@ -232,16 +232,16 @@ func (o Redis) CheckAcl(username, topic, clientid string, acc int32) (bool, erro
 	return ok, err
 }
 
-//CheckAcl gets all acls for the username and tries to match against topic, acc, and username/clientid if needed.
+// CheckAcl gets all acls for the username and tries to match against topic, acc, and username/clientid if needed.
 func (o Redis) checkAcl(username, topic, clientid string, acc int32) (bool, error) {
 
-	var acls []string       //User specific acls.
-	var commonAcls []string //Common acls.
+	var acls []string       // User specific acls.
+	var commonAcls []string // Common acls.
 
-	//We need to check if client is subscribing, reading or publishing to get correct acls.
+	// We need to check if client is subscribing, reading or publishing to get correct acls.
 	switch acc {
 	case MOSQ_ACL_SUBSCRIBE:
-		//Get all user subscribe acls.
+		// Get all user subscribe acls.
 		var err error
 		acls, err = o.conn.SMembers(o.ctx, fmt.Sprintf("%s:sacls", username)).Result()
 		if err == goredis.Nil {
@@ -250,7 +250,7 @@ func (o Redis) checkAcl(username, topic, clientid string, acc int32) (bool, erro
 			return false, err
 		}
 
-		//Get common subscribe acls.
+		// Get common subscribe acls.
 		commonAcls, err = o.conn.SMembers(o.ctx, "common:sacls").Result()
 		if err == goredis.Nil {
 			return false, nil
@@ -259,7 +259,7 @@ func (o Redis) checkAcl(username, topic, clientid string, acc int32) (bool, erro
 		}
 
 	case MOSQ_ACL_READ:
-		//Get all user read and readwrite acls.
+		// Get all user read and readwrite acls.
 		urAcls, err := o.conn.SMembers(o.ctx, fmt.Sprintf("%s:racls", username)).Result()
 		if err == goredis.Nil {
 			return false, nil
@@ -273,7 +273,7 @@ func (o Redis) checkAcl(username, topic, clientid string, acc int32) (bool, erro
 			return false, err
 		}
 
-		//Get common read and readwrite acls
+		// Get common read and readwrite acls
 		rAcls, err := o.conn.SMembers(o.ctx, "common:racls").Result()
 		if err == goredis.Nil {
 			return false, nil
@@ -295,7 +295,7 @@ func (o Redis) checkAcl(username, topic, clientid string, acc int32) (bool, erro
 		commonAcls = append(commonAcls, rAcls...)
 		commonAcls = append(commonAcls, rwAcls...)
 	case MOSQ_ACL_WRITE:
-		//Get all user write and readwrite acls.
+		// Get all user write and readwrite acls.
 		uwAcls, err := o.conn.SMembers(o.ctx, fmt.Sprintf("%s:wacls", username)).Result()
 		if err == goredis.Nil {
 			return false, nil
@@ -309,7 +309,7 @@ func (o Redis) checkAcl(username, topic, clientid string, acc int32) (bool, erro
 			return false, err
 		}
 
-		//Get common write and readwrite acls
+		// Get common write and readwrite acls
 		wAcls, err := o.conn.SMembers(o.ctx, "common:wacls").Result()
 		if err == goredis.Nil {
 			return false, nil
@@ -332,7 +332,7 @@ func (o Redis) checkAcl(username, topic, clientid string, acc int32) (bool, erro
 		commonAcls = append(commonAcls, rwAcls...)
 	}
 
-	//Now loop through acls looking for a match.
+	// Now loop through acls looking for a match.
 	for _, acl := range acls {
 		if topics.Match(acl, topic) {
 			return true, nil
@@ -350,12 +350,12 @@ func (o Redis) checkAcl(username, topic, clientid string, acc int32) (bool, erro
 	return false, nil
 }
 
-//GetName returns the backend's name
+// GetName returns the backend's name
 func (o Redis) GetName() string {
 	return "Redis"
 }
 
-//Halt terminates the connection.
+// Halt terminates the connection.
 func (o Redis) Halt() {
 	if o.conn != nil {
 		err := o.conn.Close()

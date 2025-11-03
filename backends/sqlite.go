@@ -5,15 +5,15 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/iegomez/mosquitto-go-auth/backends/topics"
-	"github.com/iegomez/mosquitto-go-auth/hashing"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"github.com/smallfish06/mosquitto-go-auth/backends/topics"
+	"github.com/smallfish06/mosquitto-go-auth/hashing"
 )
 
-//Sqlite holds all fields of the sqlite db connection.
+// Sqlite holds all fields of the sqlite db connection.
 type Sqlite struct {
 	DB             *sqlx.DB
 	Source         string
@@ -30,7 +30,7 @@ func NewSqlite(authOpts map[string]string, logLevel log.Level, hasher hashing.Ha
 
 	log.SetLevel(logLevel)
 
-	//Set defaults for sqlite
+	// Set defaults for sqlite
 
 	sqliteOk := true
 	missingOptions := ""
@@ -71,12 +71,12 @@ func NewSqlite(authOpts map[string]string, logLevel log.Level, hasher hashing.Ha
 		}
 	}
 
-	//Exit if any mandatory option is missing.
+	// Exit if any mandatory option is missing.
 	if !sqliteOk {
 		return sqlite, errors.Errorf("sqlite backend error: missing options: %s", missingOptions)
 	}
 
-	//Build the dsn string and try to connect to the db.
+	// Build the dsn string and try to connect to the db.
 	connStr := ":memory:"
 	if sqlite.Source != "memory" {
 		connStr = sqlite.Source
@@ -103,7 +103,7 @@ func NewSqlite(authOpts map[string]string, logLevel log.Level, hasher hashing.Ha
 
 }
 
-//GetUser checks that the username exists and the given password hashes to the same password.
+// GetUser checks that the username exists and the given password hashes to the same password.
 func (o Sqlite) GetUser(username, password, clientid string) (bool, error) {
 
 	var pwHash sql.NullString
@@ -132,10 +132,10 @@ func (o Sqlite) GetUser(username, password, clientid string) (bool, error) {
 
 }
 
-//GetSuperuser checks that the username meets the superuser query.
+// GetSuperuser checks that the username meets the superuser query.
 func (o Sqlite) GetSuperuser(username string) (bool, error) {
 
-	//If there's no superuser query, return false.
+	// If there's no superuser query, return false.
 	if o.SuperuserQuery == "" {
 		return false, nil
 	}
@@ -166,9 +166,9 @@ func (o Sqlite) GetSuperuser(username string) (bool, error) {
 
 }
 
-//CheckAcl gets all acls for the username and tries to match against topic, acc, and username/clientid if needed.
+// CheckAcl gets all acls for the username and tries to match against topic, acc, and username/clientid if needed.
 func (o Sqlite) CheckAcl(username, topic, clientid string, acc int32) (bool, error) {
-	//If there's no acl query, assume all privileges for all users.
+	// If there's no acl query, assume all privileges for all users.
 	if o.AclQuery == "" {
 		return true, nil
 	}
@@ -194,12 +194,12 @@ func (o Sqlite) CheckAcl(username, topic, clientid string, acc int32) (bool, err
 
 }
 
-//GetName returns the backend's name
+// GetName returns the backend's name
 func (o Sqlite) GetName() string {
 	return "Sqlite"
 }
 
-//Halt closes the mysql connection.
+// Halt closes the mysql connection.
 func (o Sqlite) Halt() {
 	if o.DB != nil {
 		err := o.DB.Close()

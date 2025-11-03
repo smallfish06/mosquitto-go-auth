@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/iegomez/mosquitto-go-auth/backends/constants"
-	"github.com/iegomez/mosquitto-go-auth/hashing"
 	log "github.com/sirupsen/logrus"
+	. "github.com/smallfish06/mosquitto-go-auth/backends/constants"
+	"github.com/smallfish06/mosquitto-go-auth/hashing"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -158,7 +158,7 @@ func TestFiles(t *testing.T) {
 			So(authenticated, ShouldBeFalse)
 		})
 
-		//There are no superusers for files
+		// There are no superusers for files
 		Convey("For any user superuser should return false", func() {
 			superuser, err := files.GetSuperuser(user1)
 			So(err, ShouldBeNil)
@@ -283,7 +283,7 @@ func TestFiles(t *testing.T) {
 			So(tt5, ShouldBeFalse)
 		})
 
-		//Now check against patterns.
+		// Now check against patterns.
 		Convey("Given a topic that mentions username, acl check should pass", func() {
 			tt1, err1 := files.CheckAcl(user1, "test/test1", clientID, 1)
 			So(err1, ShouldBeNil)
@@ -300,7 +300,7 @@ func TestFiles(t *testing.T) {
 			So(tt1, ShouldBeTrue)
 		})
 
-		//Halt files
+		// Halt files
 		files.Halt()
 	})
 

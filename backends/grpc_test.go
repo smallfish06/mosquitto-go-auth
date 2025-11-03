@@ -8,12 +8,12 @@ import (
 	"net"
 	"testing"
 
-	"github.com/golang/protobuf/ptypes/empty"
-	gs "github.com/iegomez/mosquitto-go-auth/grpc"
 	log "github.com/sirupsen/logrus"
+	gs "github.com/smallfish06/mosquitto-go-auth/grpc"
 	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 const (
@@ -25,7 +25,9 @@ const (
 	grpcClientId  string = "test_client"
 )
 
-type AuthServiceAPI struct{}
+type AuthServiceAPI struct {
+	gs.UnimplementedAuthServiceServer
+}
 
 func NewAuthServiceAPI() *AuthServiceAPI {
 	return &AuthServiceAPI{}
@@ -64,14 +66,14 @@ func (a *AuthServiceAPI) CheckAcl(ctx context.Context, req *gs.CheckAclRequest) 
 	}, nil
 }
 
-func (a *AuthServiceAPI) GetName(ctx context.Context, req *empty.Empty) (*gs.NameResponse, error) {
+func (a *AuthServiceAPI) GetName(ctx context.Context, req *emptypb.Empty) (*gs.NameResponse, error) {
 	return &gs.NameResponse{
 		Name: "MyGRPCBackend",
 	}, nil
 }
 
-func (a *AuthServiceAPI) Halt(ctx context.Context, req *empty.Empty) (*empty.Empty, error) {
-	return &empty.Empty{}, nil
+func (a *AuthServiceAPI) Halt(ctx context.Context, req *emptypb.Empty) (*emptypb.Empty, error) {
+	return &emptypb.Empty{}, nil
 }
 
 func TestGRPC(t *testing.T) {

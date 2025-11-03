@@ -11,9 +11,9 @@ import (
 	"time"
 
 	goredis "github.com/go-redis/redis/v8"
-	bes "github.com/iegomez/mosquitto-go-auth/backends"
 	"github.com/jellydator/ttlcache/v3"
 	log "github.com/sirupsen/logrus"
+	bes "github.com/smallfish06/mosquitto-go-auth/backends"
 )
 
 // redisCache stores necessary values for Redis cache
@@ -79,7 +79,7 @@ func NewSingleRedisStore(host, port, password string, db int, authExpiration, ac
 		Password: password, // no password set
 		DB:       db,       // use default db
 	})
-	//If cache is on, try to start redis.
+	// If cache is on, try to start redis.
 	return &redisStore{
 		authExpiration:    authExpiration,
 		aclExpiration:     aclExpiration,
@@ -165,7 +165,7 @@ func (s *redisStore) Connect(ctx context.Context, reset bool) bool {
 		return false
 	} else {
 		log.Infoln("started redis cache")
-		//Check if cache must be reset
+		// Check if cache must be reset
 		if reset {
 			s.client.FlushDB(ctx)
 			log.Infoln("flushed redis cache")
@@ -175,7 +175,7 @@ func (s *redisStore) Connect(ctx context.Context, reset bool) bool {
 }
 
 func (s *goStore) Close() {
-	//TODO: support serializing cache for re hydration.
+	// TODO: support serializing cache for re hydration.
 }
 
 func (s *redisStore) Close() {
@@ -238,7 +238,7 @@ func (s *redisStore) checkRecord(ctx context.Context, record string, expirationT
 	if isMovedError(err) {
 		s.client.ReloadState(ctx)
 
-		//Retry once.
+		// Retry once.
 		present, granted, err = s.getAndRefresh(ctx, record, expirationTime)
 	}
 
@@ -320,7 +320,7 @@ func (s *redisStore) setRecord(ctx context.Context, record, granted string, expi
 	if isMovedError(err) {
 		s.client.ReloadState(ctx)
 
-		//Retry once.
+		// Retry once.
 		err = s.set(ctx, record, granted, expirationTime)
 	}
 

@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	. "github.com/iegomez/mosquitto-go-auth/backends/constants"
 	log "github.com/sirupsen/logrus"
+	. "github.com/smallfish06/mosquitto-go-auth/backends/constants"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -264,7 +264,7 @@ func TestHTTPJsonStatusOnlyServer(t *testing.T) {
 				w.WriteHeader(http.StatusNotFound)
 			}
 		} else if r.URL.Path == "/acl" {
-			//uAcc := float64.(params["acc"])
+			// uAcc := float64.(params["acc"])
 			paramsAcc := int64(params["acc"].(float64))
 			if params["username"].(string) == username && params["topic"].(string) == topic && params["clientid"].(string) == clientId && paramsAcc <= acc {
 				w.WriteHeader(http.StatusOK)
@@ -411,7 +411,7 @@ func TestHTTPJsonTextResponseServer(t *testing.T) {
 				w.Write([]byte("Not a superuser"))
 			}
 		} else if r.URL.Path == "/acl" {
-			//uAcc := float64.(params["acc"])
+			// uAcc := float64.(params["acc"])
 			paramsAcc := int64(params["acc"].(float64))
 			if params["username"].(string) == username && params["topic"].(string) == topic && params["clientid"].(string) == clientId && paramsAcc <= acc {
 				w.Write([]byte("ok"))

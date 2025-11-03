@@ -9,11 +9,11 @@ import (
 	"sync"
 	"syscall"
 
-	. "github.com/iegomez/mosquitto-go-auth/backends/constants"
-	"github.com/iegomez/mosquitto-go-auth/backends/topics"
-	"github.com/iegomez/mosquitto-go-auth/hashing"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	. "github.com/smallfish06/mosquitto-go-auth/backends/constants"
+	"github.com/smallfish06/mosquitto-go-auth/backends/topics"
+	"github.com/smallfish06/mosquitto-go-auth/hashing"
 )
 
 const (
@@ -41,7 +41,7 @@ type staticFileUser struct {
 // aclRecord holds a topic and access privileges.
 type aclRecord struct {
 	topic string
-	acc   byte //None 0x00, Read 0x01, Write 0x02, ReadWrite: Read | Write : 0x03, Subscribe 0x04, Deny 0x11
+	acc   byte // None 0x00, Read 0x01, Write 0x02, ReadWrite: Read | Write : 0x03, Subscribe 0x04, Deny 0x11
 }
 
 // Checker holds paths to static files, list of file users and general (no user or pattern) acl records.
@@ -51,7 +51,7 @@ type Checker struct {
 	aclPath         string
 	checkACLs       bool
 	checkUsers      bool
-	users           map[string]*staticFileUser //users keeps a registry of username/staticFileUser pairs, holding a user's password and Acl records.
+	users           map[string]*staticFileUser // users keeps a registry of username/staticFileUser pairs, holding a user's password and Acl records.
 	aclRecords      []aclRecord
 	staticFilesOnly bool
 	hasher          hashing.HashComparer
