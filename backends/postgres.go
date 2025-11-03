@@ -35,7 +35,7 @@ type Postgres struct {
 	connectTries int
 }
 
-func NewPostgres(authOpts map[string]string, logLevel slog.Level, hasher hashing.HashComparer) (Postgres, error) {
+func NewPostgres(authOpts map[string]string, hasher hashing.HashComparer) (Postgres, error) {
 
 	// Set defaults for postgres
 

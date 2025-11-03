@@ -13,7 +13,7 @@ type filesJWTChecker struct {
 	options tokenOptions
 }
 
-func NewFilesJWTChecker(authOpts map[string]string, logLevel slog.Level, hasher hashing.HashComparer, options tokenOptions) (jwtChecker, error) {
+func NewFilesJWTChecker(authOpts map[string]string, hasher hashing.HashComparer, options tokenOptions) (jwtChecker, error) {
 
 	/*	We could ask for a file listing available users with no password, but that gives very little value
 		versus just assuming users in the ACL file are valid ones, while general rules apply to any user.
@@ -24,7 +24,7 @@ func NewFilesJWTChecker(authOpts map[string]string, logLevel slog.Level, hasher 
 		return nil, errors.New("missing acl file path")
 	}
 
-	var checker, err = files.NewChecker(authOpts["backends"], "", aclPath, logLevel, hasher)
+	var checker, err = files.NewChecker(authOpts["backends"], "", aclPath, hasher)
 	if err != nil {
 		return nil, err
 	}

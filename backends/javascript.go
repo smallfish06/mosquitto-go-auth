@@ -19,7 +19,7 @@ type Javascript struct {
 	runner *js.Runner
 }
 
-func NewJavascript(authOpts map[string]string, logLevel slog.Level) (*Javascript, error) {
+func NewJavascript(authOpts map[string]string) (*Javascript, error) {
 
 	javascript := &Javascript{
 		stackDepthLimit: js.DefaultStackDepthLimit,

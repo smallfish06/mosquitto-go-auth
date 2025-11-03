@@ -33,9 +33,9 @@ type LDAP struct {
 	AclAccAttribute          string
 }
 
-func NewLDAP(authOpts map[string]string, logLevel slog.Level) (LDAP, error) {
+func NewLDAP(authOpts map[string]string) (LDAP, error) {
 
-	l, err := NewLDAPWithFactory(authOpts, logLevel, func(l LDAP) (LDAPClient, error) {
+	l, err := NewLDAPWithFactory(authOpts, func(l LDAP) (LDAPClient, error) {
 		ldapClient, err := ldap.DialURL(l.Url)
 		return ldapClient, err
 	})
@@ -43,7 +43,7 @@ func NewLDAP(authOpts map[string]string, logLevel slog.Level) (LDAP, error) {
 	return l, err
 }
 
-func NewLDAPWithFactory(authOpts map[string]string, logLevel slog.Level, ldapClientFactory LDAPClientFactory) (LDAP, error) {
+func NewLDAPWithFactory(authOpts map[string]string, ldapClientFactory LDAPClientFactory) (LDAP, error) {
 
 	ldapOk := true
 	missingOptions := ""

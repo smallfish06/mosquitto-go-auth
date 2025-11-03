@@ -112,7 +112,7 @@ func AuthPluginInit(keys []*C.char, values []*C.char, authOptsNum int, version *
 
 	var err error
 
-	authPlugin.backends, err = bes.Initialize(authOpts, authPlugin.logLevel, C.GoString(version))
+	authPlugin.backends, err = bes.Initialize(authOpts, C.GoString(version))
 	if err != nil {
 		slog.Error("error initializing backends", "error", err)
 		os.Exit(1)

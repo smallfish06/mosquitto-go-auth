@@ -1,7 +1,6 @@
 package backends
 
 import (
-	"log/slog"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -15,7 +14,7 @@ type Files struct {
 }
 
 // NewFiles initializes a files backend.
-func NewFiles(authOpts map[string]string, logLevel slog.Level, hasher hashing.HashComparer) (*Files, error) {
+func NewFiles(authOpts map[string]string, hasher hashing.HashComparer) (*Files, error) {
 
 	/*
 		It is an error for the Files backend not to have a passwords file, but it is not for the underlying
@@ -31,7 +30,7 @@ func NewFiles(authOpts map[string]string, logLevel slog.Level, hasher hashing.Ha
 		return nil, errors.New("missing passwords file path")
 	}
 
-	var checker, err = files.NewChecker(authOpts["backends"], authOpts["files_password_path"], authOpts["files_acl_path"], logLevel, hasher)
+	var checker, err = files.NewChecker(authOpts["backends"], authOpts["files_password_path"], authOpts["files_acl_path"], hasher)
 	if err != nil {
 		return nil, err
 	}

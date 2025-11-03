@@ -24,7 +24,7 @@ const (
 )
 
 // NewLocalJWTChecker initializes a checker with a local DB.
-func NewLocalJWTChecker(authOpts map[string]string, logLevel slog.Level, hasher hashing.HashComparer, options tokenOptions) (jwtChecker, error) {
+func NewLocalJWTChecker(authOpts map[string]string, hasher hashing.HashComparer, options tokenOptions) (jwtChecker, error) {
 	checker := &localJWTChecker{
 		hasher:  hasher,
 		db:      postgresDB,
@@ -57,7 +57,7 @@ func NewLocalJWTChecker(authOpts map[string]string, logLevel slog.Level, hasher 
 	dbAuthOpts := extractOpts(authOpts, checker.db)
 
 	if checker.db == mysqlDB {
-		mysql, err := NewMysql(dbAuthOpts, logLevel, hasher)
+		mysql, err := NewMysql(dbAuthOpts, hasher)
 		if err != nil {
 			return nil, errors.Errorf("JWT backend error: couldn't create mysql connector for local jwt: %s", err)
 		}
@@ -67,7 +67,7 @@ func NewLocalJWTChecker(authOpts map[string]string, logLevel slog.Level, hasher 
 		return checker, nil
 	}
 
-	postgres, err := NewPostgres(dbAuthOpts, logLevel, hasher)
+	postgres, err := NewPostgres(dbAuthOpts, hasher)
 	if err != nil {
 		return nil, errors.Errorf("JWT backend error: couldn't create postgres connector for local jwt: %s", err)
 	}

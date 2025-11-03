@@ -37,7 +37,7 @@ func TestRedisCluster(t *testing.T) {
 }
 
 func testRedis(ctx context.Context, t *testing.T, authOpts map[string]string) {
-	redis, err := NewRedis(authOpts, slog.LevelDebug, hashing.NewHasher(authOpts, "redis"))
+	redis, err := NewRedis(authOpts, hashing.NewHasher(authOpts, "redis"))
 	assert.Nil(t, err)
 
 	// Empty db

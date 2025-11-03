@@ -2,7 +2,6 @@ package files
 
 import (
 	"fmt"
-	"log/slog"
 	"os"
 	"path/filepath"
 	"syscall"
@@ -18,7 +17,7 @@ func TestFiles(t *testing.T) {
 	authOpts := make(map[string]string)
 
 	Convey("Given empty opts NewChecker should fail", t, func() {
-		files, err := NewChecker("", "", "", slog.LevelDebug, hashing.NewHasher(authOpts, "files"))
+		files, err := NewChecker("", "", "", hashing.NewHasher(authOpts, "files"))
 		So(err, ShouldBeError)
 
 		files.Halt()
@@ -32,7 +31,7 @@ func TestFiles(t *testing.T) {
 		So(err, ShouldBeNil)
 		clientID := "test_client"
 
-		files, err := NewChecker(backendsOpt, pwPath, aclPath, slog.LevelDebug, hashing.NewHasher(authOpts, "files"))
+		files, err := NewChecker(backendsOpt, pwPath, aclPath, hashing.NewHasher(authOpts, "files"))
 		So(err, ShouldBeNil)
 
 		/*
@@ -339,7 +338,7 @@ func TestFiles(t *testing.T) {
 
 		backendsOpt := "files"
 
-		files, err := NewChecker(backendsOpt, pwPath, aclPath, slog.LevelDebug, hasher)
+		files, err := NewChecker(backendsOpt, pwPath, aclPath, hasher)
 		So(err, ShouldBeNil)
 
 		user, ok := files.users[user1]

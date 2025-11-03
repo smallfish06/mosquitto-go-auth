@@ -13,14 +13,13 @@ func TestFilesBackend(t *testing.T) {
 	// The bulk of files testing is done in the internal files checker, we'll just check obvious initialization and defaults.
 
 	authOpts := make(map[string]string)
-	logLevel := slog.LevelDebug
 	hasher := hashing.NewHasher(authOpts, "files")
 
 	Convey("When files backend is set, missing passwords path should make NewFiles fail when registered to check users", t, func() {
 		authOpts["backends"] = "files"
 		authOpts["files_register"] = "user"
 
-		_, err := NewFiles(authOpts, logLevel, hasher)
+		_, err := NewFiles(authOpts, hasher)
 		So(err, ShouldNotBeNil)
 	})
 
@@ -28,7 +27,7 @@ func TestFilesBackend(t *testing.T) {
 		authOpts["backends"] = "files"
 		delete(authOpts, "files_register")
 
-		_, err := NewFiles(authOpts, logLevel, hasher)
+		_, err := NewFiles(authOpts, hasher)
 		So(err, ShouldBeNil)
 	})
 
@@ -40,7 +39,7 @@ func TestFilesBackend(t *testing.T) {
 		authOpts["files_register"] = "user"
 		authOpts["files_password_path"] = pwPath
 
-		_, err = NewFiles(authOpts, logLevel, hasher)
+		_, err = NewFiles(authOpts, hasher)
 		So(err, ShouldBeNil)
 	})
 
@@ -53,7 +52,7 @@ func TestFilesBackend(t *testing.T) {
 		authOpts["files_acl_path"] = aclPath
 		delete(authOpts, "files_password_path")
 
-		f, err := NewFiles(authOpts, logLevel, hasher)
+		f, err := NewFiles(authOpts, hasher)
 		So(err, ShouldBeNil)
 
 		granted, err := f.CheckAcl("some-user", "any/topic", "client-id", 1)
@@ -76,7 +75,7 @@ func TestFilesBackend(t *testing.T) {
 		authOpts["files_acl_path"] = aclPath
 		delete(authOpts, "files_password_path")
 
-		f, err := NewFiles(authOpts, logLevel, hasher)
+		f, err := NewFiles(authOpts, hasher)
 		So(err, ShouldBeNil)
 
 		granted, err := f.CheckAcl("some-user", "clients/wrong-topic", "client-id", 1)

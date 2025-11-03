@@ -40,7 +40,7 @@ const (
 	claimsIssKey      = "iss"
 )
 
-func NewJWT(authOpts map[string]string, logLevel slog.Level, hasher hashing.HashComparer, version string) (*JWT, error) {
+func NewJWT(authOpts map[string]string, hasher hashing.HashComparer, version string) (*JWT, error) {
 
 	jwt := &JWT{}
 
@@ -77,13 +77,13 @@ func NewJWT(authOpts map[string]string, logLevel slog.Level, hasher hashing.Hash
 		checker, err = NewJsJWTChecker(authOpts, options)
 	case localMode:
 		jwt.mode = localMode
-		checker, err = NewLocalJWTChecker(authOpts, logLevel, hasher, options)
+		checker, err = NewLocalJWTChecker(authOpts, hasher, options)
 	case remoteMode:
 		jwt.mode = remoteMode
 		checker, err = NewRemoteJWTChecker(authOpts, options, version)
 	case filesMode:
 		jwt.mode = filesMode
-		checker, err = NewFilesJWTChecker(authOpts, logLevel, hasher, options)
+		checker, err = NewFilesJWTChecker(authOpts, hasher, options)
 	default:
 		err = errors.New("unknown JWT mode")
 	}

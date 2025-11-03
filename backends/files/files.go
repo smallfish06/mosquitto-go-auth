@@ -59,7 +59,7 @@ type Checker struct {
 }
 
 // NewCheckers initializes a static files checker.
-func NewChecker(backends, passwordPath, aclPath string, logLevel slog.Level, hasher hashing.HashComparer) (*Checker, error) {
+func NewChecker(backends, passwordPath, aclPath string, hasher hashing.HashComparer) (*Checker, error) {
 
 	var checker = &Checker{
 		pwPath:          passwordPath,

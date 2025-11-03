@@ -33,7 +33,7 @@ type GRPC struct {
 const defaultGRPCTimeoutMs = 500
 
 // NewGRPC tries to connect to the gRPC service at the given host.
-func NewGRPC(authOpts map[string]string, logLevel any) (*GRPC, error) {
+func NewGRPC(authOpts map[string]string) (*GRPC, error) {
 	g := &GRPC{
 		timeout: defaultGRPCTimeoutMs,
 	}

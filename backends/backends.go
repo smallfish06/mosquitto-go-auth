@@ -75,7 +75,7 @@ var allowedBackendsOptsPrefix = map[string]string{
 }
 
 // Initialize sets general options, tries to build the backends and register their checkers.
-func Initialize(authOpts map[string]string, logLevel slog.Level, version string) (*Backends, error) {
+func Initialize(authOpts map[string]string, version string) (*Backends, error) {
 
 	b := &Backends{
 		backends:          make(map[string]Backend),
@@ -113,7 +113,7 @@ func Initialize(authOpts map[string]string, logLevel slog.Level, version string)
 		}
 	}
 
-	err := b.addBackends(authOpts, logLevel, backends, version)
+	err := b.addBackends(authOpts, backends, version)
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +128,7 @@ func Initialize(authOpts map[string]string, logLevel slog.Level, version string)
 	return b, nil
 }
 
-func (b *Backends) addBackends(authOpts map[string]string, logLevel slog.Level, backends []string, version string) error {
+func (b *Backends) addBackends(authOpts map[string]string, backends []string, version string) error {
 	// Store given backends as given to order them when checking.
 	//
 	// This allows to sort user checking, and first exhaust superuser/acl checks of a given backend before checking the next one,
@@ -146,7 +146,7 @@ func (b *Backends) addBackends(authOpts map[string]string, logLevel slog.Level, 
 		hasher := hashing.NewHasher(authOpts, allowedBackendsOptsPrefix[bename])
 		switch bename {
 		case postgresBackend:
-			beIface, err = NewPostgres(authOpts, logLevel, hasher)
+			beIface, err = NewPostgres(authOpts, hasher)
 			if err != nil {
 				slog.Error("backend register error: couldn't initialize backend", "backend", bename, "error", err)
 				os.Exit(1)
@@ -155,7 +155,7 @@ func (b *Backends) addBackends(authOpts map[string]string, logLevel slog.Level, 
 				b.backends[postgresBackend] = beIface.(Postgres)
 			}
 		case jwtBackend:
-			beIface, err = NewJWT(authOpts, logLevel, hasher, version)
+			beIface, err = NewJWT(authOpts, hasher, version)
 			if err != nil {
 				slog.Error("backend register error: couldn't initialize backend", "backend", bename, "error", err)
 				os.Exit(1)
@@ -164,7 +164,7 @@ func (b *Backends) addBackends(authOpts map[string]string, logLevel slog.Level, 
 				b.backends[jwtBackend] = beIface.(*JWT)
 			}
 		case filesBackend:
-			beIface, err = NewFiles(authOpts, logLevel, hasher)
+			beIface, err = NewFiles(authOpts, hasher)
 			if err != nil {
 				slog.Error("backend register error: couldn't initialize backend", "backend", bename, "error", err)
 				os.Exit(1)
@@ -173,7 +173,7 @@ func (b *Backends) addBackends(authOpts map[string]string, logLevel slog.Level, 
 				b.backends[filesBackend] = beIface.(*Files)
 			}
 		case redisBackend:
-			beIface, err = NewRedis(authOpts, logLevel, hasher)
+			beIface, err = NewRedis(authOpts, hasher)
 			if err != nil {
 				slog.Error("backend register error: couldn't initialize backend", "backend", bename, "error", err)
 				os.Exit(1)
@@ -182,7 +182,7 @@ func (b *Backends) addBackends(authOpts map[string]string, logLevel slog.Level, 
 				b.backends[redisBackend] = beIface.(Redis)
 			}
 		case mysqlBackend:
-			beIface, err = NewMysql(authOpts, logLevel, hasher)
+			beIface, err = NewMysql(authOpts, hasher)
 			if err != nil {
 				slog.Error("backend register error: couldn't initialize backend", "backend", bename, "error", err)
 				os.Exit(1)
@@ -191,7 +191,7 @@ func (b *Backends) addBackends(authOpts map[string]string, logLevel slog.Level, 
 				b.backends[mysqlBackend] = beIface.(Mysql)
 			}
 		case httpBackend:
-			beIface, err = NewHTTP(authOpts, logLevel, version)
+			beIface, err = NewHTTP(authOpts, version)
 			if err != nil {
 				slog.Error("backend register error: couldn't initialize backend", "backend", bename, "error", err)
 				os.Exit(1)
@@ -200,7 +200,7 @@ func (b *Backends) addBackends(authOpts map[string]string, logLevel slog.Level, 
 				b.backends[httpBackend] = beIface.(HTTP)
 			}
 		case sqliteBackend:
-			beIface, err = NewSqlite(authOpts, logLevel, hasher)
+			beIface, err = NewSqlite(authOpts, hasher)
 			if err != nil {
 				slog.Error("backend register error: couldn't initialize backend", "backend", bename, "error", err)
 				os.Exit(1)
@@ -209,7 +209,7 @@ func (b *Backends) addBackends(authOpts map[string]string, logLevel slog.Level, 
 				b.backends[sqliteBackend] = beIface.(Sqlite)
 			}
 		case mongoBackend:
-			beIface, err = NewMongo(authOpts, logLevel, hasher)
+			beIface, err = NewMongo(authOpts, hasher)
 			if err != nil {
 				slog.Error("backend register error: couldn't initialize backend", "backend", bename, "error", err)
 				os.Exit(1)
@@ -218,7 +218,7 @@ func (b *Backends) addBackends(authOpts map[string]string, logLevel slog.Level, 
 				b.backends[mongoBackend] = beIface.(Mongo)
 			}
 		case grpcBackend:
-			beIface, err = NewGRPC(authOpts, logLevel)
+			beIface, err = NewGRPC(authOpts)
 			if err != nil {
 				slog.Error("backend register error: couldn't initialize backend", "backend", bename, "error", err)
 				os.Exit(1)
@@ -227,7 +227,7 @@ func (b *Backends) addBackends(authOpts map[string]string, logLevel slog.Level, 
 				b.backends[grpcBackend] = beIface.(*GRPC)
 			}
 		case jsBackend:
-			beIface, err = NewJavascript(authOpts, logLevel)
+			beIface, err = NewJavascript(authOpts)
 			if err != nil {
 				slog.Error("backend register error: couldn't initialize backend", "backend", bename, "error", err)
 				os.Exit(1)
@@ -236,7 +236,7 @@ func (b *Backends) addBackends(authOpts map[string]string, logLevel slog.Level, 
 				b.backends[jsBackend] = beIface.(*Javascript)
 			}
 		case ldapBackend:
-			beIface, err = NewLDAP(authOpts, logLevel)
+			beIface, err = NewLDAP(authOpts)
 			if err != nil {
 				slog.Error("backend register error: couldn't initialize backend", "backend", bename, "error", err)
 				os.Exit(1)
@@ -245,7 +245,7 @@ func (b *Backends) addBackends(authOpts map[string]string, logLevel slog.Level, 
 				b.backends[ldapBackend] = beIface.(LDAP)
 			}
 		case pluginBackend:
-			beIface, err = NewCustomPlugin(authOpts, logLevel)
+			beIface, err = NewCustomPlugin(authOpts)
 			if err != nil {
 				slog.Error("backend register error: couldn't initialize backend", "backend", bename, "error", err)
 				os.Exit(1)

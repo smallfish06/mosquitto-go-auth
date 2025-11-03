@@ -21,7 +21,7 @@ func TestJavascript(t *testing.T) {
 			badOpts["js_user_script"] = authOpts["js_user_script"]
 			badOpts["js_superuser_script"] = authOpts["js_superuser_script"]
 
-			_, err := NewJavascript(badOpts, slog.LevelDebug)
+			_, err := NewJavascript(badOpts)
 			So(err, ShouldNotBeNil)
 		})
 
@@ -32,11 +32,11 @@ func TestJavascript(t *testing.T) {
 			badOpts["js_superuser_script"] = authOpts["js_superuser_script"]
 			badOpts["js_acl_script_path"] = "../test-files/js/nothing_here.js"
 
-			_, err := NewJavascript(badOpts, slog.LevelDebug)
+			_, err := NewJavascript(badOpts)
 			So(err, ShouldNotBeNil)
 		})
 
-		javascript, err := NewJavascript(authOpts, slog.LevelDebug)
+		javascript, err := NewJavascript(authOpts)
 		So(err, ShouldBeNil)
 
 		Convey("User checks should work", func() {

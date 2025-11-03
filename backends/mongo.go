@@ -46,7 +46,7 @@ type MongoUser struct {
 	Acls         []MongoAcl `bson:"acls"`
 }
 
-func NewMongo(authOpts map[string]string, logLevel slog.Level, hasher hashing.HashComparer) (Mongo, error) {
+func NewMongo(authOpts map[string]string, hasher hashing.HashComparer) (Mongo, error) {
 
 	var m = Mongo{
 		Host:               "localhost",

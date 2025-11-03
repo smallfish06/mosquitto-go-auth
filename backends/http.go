@@ -36,7 +36,7 @@ type HTTPResponse struct {
 	Error string `json:"error"`
 }
 
-func NewHTTP(authOpts map[string]string, logLevel slog.Level, version string) (HTTP, error) {
+func NewHTTP(authOpts map[string]string, version string) (HTTP, error) {
 
 	// Initialize with defaults
 	var http = HTTP{

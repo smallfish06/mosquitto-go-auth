@@ -42,7 +42,7 @@ type Mysql struct {
 	connectTries int
 }
 
-func NewMysql(authOpts map[string]string, logLevel slog.Level, hasher hashing.HashComparer) (Mysql, error) {
+func NewMysql(authOpts map[string]string, hasher hashing.HashComparer) (Mysql, error) {
 
 	// Set defaults for Mysql
 

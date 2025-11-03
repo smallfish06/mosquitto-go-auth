@@ -39,7 +39,7 @@ func TestBackendsOrder(t *testing.T) {
 
 		// Hook removed for slog migration
 
-		redis, err := NewRedis(authOpts, slog.LevelDebug, hashing.NewHasher(authOpts, "redis"))
+		redis, err := NewRedis(authOpts, hashing.NewHasher(authOpts, "redis"))
 		assert.Nil(t, err)
 
 		ctx := context.Background()
@@ -48,7 +48,7 @@ func TestBackendsOrder(t *testing.T) {
 		username = "test1"
 		redis.conn.Set(ctx, username, passwordHash, 0)
 
-		b, err := Initialize(authOpts, slog.LevelDebug, version)
+		b, err := Initialize(authOpts, version)
 		So(err, ShouldBeNil)
 
 		tt1, err1 := b.AuthUnpwdCheck(username, password, clientid)
@@ -75,7 +75,7 @@ func TestBackendsOrder(t *testing.T) {
 
 		// Hook removed for slog migration
 
-		redis, err := NewRedis(authOpts, slog.LevelDebug, hashing.NewHasher(authOpts, "redis"))
+		redis, err := NewRedis(authOpts, hashing.NewHasher(authOpts, "redis"))
 		assert.Nil(t, err)
 
 		ctx := context.Background()
@@ -84,7 +84,7 @@ func TestBackendsOrder(t *testing.T) {
 		username = "test1"
 		redis.conn.Set(ctx, username, passwordHash, 0)
 
-		b, err := Initialize(authOpts, slog.LevelDebug, version)
+		b, err := Initialize(authOpts, version)
 		So(err, ShouldBeNil)
 
 		tt1, err1 := b.AuthUnpwdCheck(username, password, clientid)
@@ -142,13 +142,13 @@ func TestBackends(t *testing.T) {
 	Convey("Missing or empty backends option should result in an error", t, func() {
 		authOpts["backends"] = ""
 
-		_, err := Initialize(authOpts, slog.LevelDebug, version)
+		_, err := Initialize(authOpts, version)
 		So(err, ShouldNotBeNil)
 		So(err.Error(), ShouldEqual, "missing or blank option backends")
 
 		delete(authOpts, "backends")
 
-		_, err = Initialize(authOpts, slog.LevelDebug, version)
+		_, err = Initialize(authOpts, version)
 		So(err, ShouldNotBeNil)
 		So(err.Error(), ShouldEqual, "missing or blank option backends")
 	})
@@ -156,7 +156,7 @@ func TestBackends(t *testing.T) {
 	Convey("An unknown backend should result in an error", t, func() {
 		authOpts["backends"] = "unknown"
 
-		_, err := Initialize(authOpts, slog.LevelDebug, version)
+		_, err := Initialize(authOpts, version)
 		So(err, ShouldNotBeNil)
 		So(err.Error(), ShouldEqual, "unknown backend unknown")
 	})
@@ -166,7 +166,7 @@ func TestBackends(t *testing.T) {
 		authOpts["files_register"] = "user"
 		authOpts["redis_register"] = "unknown"
 
-		_, err := Initialize(authOpts, slog.LevelDebug, version)
+		_, err := Initialize(authOpts, version)
 		So(err, ShouldNotBeNil)
 		So(err.Error(), ShouldEqual, "unsupported check unknown found for backend redis")
 	})
@@ -176,7 +176,7 @@ func TestBackends(t *testing.T) {
 		authOpts["files_register"] = "acl"
 		authOpts["redis_register"] = "user"
 
-		redis, err := NewRedis(authOpts, slog.LevelDebug, hashing.NewHasher(authOpts, "redis"))
+		redis, err := NewRedis(authOpts, hashing.NewHasher(authOpts, "redis"))
 		assert.Nil(t, err)
 
 		ctx := context.Background()
@@ -185,7 +185,7 @@ func TestBackends(t *testing.T) {
 		username = "test1"
 		redis.conn.Set(ctx, username, passwordHash, 0)
 
-		b, err := Initialize(authOpts, slog.LevelDebug, version)
+		b, err := Initialize(authOpts, version)
 		So(err, ShouldBeNil)
 
 		// Redis only contains test1, while files has a bunch of more users.
@@ -228,7 +228,7 @@ func TestBackends(t *testing.T) {
 		delete(authOpts, "files_register")
 		delete(authOpts, "redis_register")
 
-		redis, err := NewRedis(authOpts, slog.LevelDebug, hashing.NewHasher(authOpts, "redis"))
+		redis, err := NewRedis(authOpts, hashing.NewHasher(authOpts, "redis"))
 		assert.Nil(t, err)
 
 		ctx := context.Background()
@@ -236,7 +236,7 @@ func TestBackends(t *testing.T) {
 		// Insert a user to test auth
 		redis.conn.Set(ctx, username, passwordHash, 0)
 
-		b, err := Initialize(authOpts, slog.LevelDebug, version)
+		b, err := Initialize(authOpts, version)
 		So(err, ShouldBeNil)
 
 		tt1, err1 := b.AuthUnpwdCheck(username, password, clientid)
@@ -283,7 +283,7 @@ func TestBackends(t *testing.T) {
 			password := username
 			passwordHash := "PBKDF2$sha512$100000$hgodnayqjfs0AOCxvsU+Zw==$dfc4LBGmZ/wB128NOD48qF5fCS+r/bsjU+oCXgT3UksAik73vIkXcPFydtbJKoIgnepNXP9t+zGIaR5wyRmXaA=="
 
-			redis, err := NewRedis(authOpts, slog.LevelDebug, hashing.NewHasher(authOpts, "redis"))
+			redis, err := NewRedis(authOpts, hashing.NewHasher(authOpts, "redis"))
 			assert.Nil(t, err)
 
 			ctx := context.Background()
@@ -293,7 +293,7 @@ func TestBackends(t *testing.T) {
 			// Set it as superuser.
 			redis.conn.Set(ctx, fmt.Sprintf("%s:su", username), "true", 0)
 
-			b, err := Initialize(authOpts, slog.LevelDebug, version)
+			b, err := Initialize(authOpts, version)
 			So(err, ShouldBeNil)
 
 			tt1, err1 := b.AuthUnpwdCheck(username, password, clientid)
@@ -329,7 +329,7 @@ func TestBackends(t *testing.T) {
 			password := username
 			passwordHash := "PBKDF2$sha512$100000$hgodnayqjfs0AOCxvsU+Zw==$dfc4LBGmZ/wB128NOD48qF5fCS+r/bsjU+oCXgT3UksAik73vIkXcPFydtbJKoIgnepNXP9t+zGIaR5wyRmXaA=="
 
-			redis, err := NewRedis(authOpts, slog.LevelDebug, hashing.NewHasher(authOpts, "redis"))
+			redis, err := NewRedis(authOpts, hashing.NewHasher(authOpts, "redis"))
 			assert.Nil(t, err)
 
 			ctx := context.Background()
@@ -338,7 +338,7 @@ func TestBackends(t *testing.T) {
 			redis.conn.Set(ctx, username, passwordHash, 0)
 			redis.conn.Set(ctx, fmt.Sprintf("%s:su", username), "true", 0)
 
-			b, err := Initialize(authOpts, slog.LevelDebug, version)
+			b, err := Initialize(authOpts, version)
 			So(err, ShouldBeNil)
 
 			tt1, err1 := b.AuthUnpwdCheck(username, password, clientid)
@@ -374,7 +374,7 @@ func TestBackends(t *testing.T) {
 			password := username
 			passwordHash := "PBKDF2$sha512$100000$hgodnayqjfs0AOCxvsU+Zw==$dfc4LBGmZ/wB128NOD48qF5fCS+r/bsjU+oCXgT3UksAik73vIkXcPFydtbJKoIgnepNXP9t+zGIaR5wyRmXaA=="
 
-			redis, err := NewRedis(authOpts, slog.LevelDebug, hashing.NewHasher(authOpts, "redis"))
+			redis, err := NewRedis(authOpts, hashing.NewHasher(authOpts, "redis"))
 			assert.Nil(t, err)
 
 			ctx := context.Background()
@@ -383,7 +383,7 @@ func TestBackends(t *testing.T) {
 			redis.conn.Set(ctx, username, passwordHash, 0)
 			redis.conn.Set(ctx, fmt.Sprintf("%s:su", username), "true", 0)
 
-			b, err := Initialize(authOpts, slog.LevelDebug, version)
+			b, err := Initialize(authOpts, version)
 			So(err, ShouldBeNil)
 
 			tt1, err1 := b.AuthUnpwdCheck(username, password, clientid)
@@ -417,7 +417,7 @@ func TestBackends(t *testing.T) {
 			password := username
 			passwordHash := "PBKDF2$sha512$100000$hgodnayqjfs0AOCxvsU+Zw==$dfc4LBGmZ/wB128NOD48qF5fCS+r/bsjU+oCXgT3UksAik73vIkXcPFydtbJKoIgnepNXP9t+zGIaR5wyRmXaA=="
 
-			redis, err := NewRedis(authOpts, slog.LevelDebug, hashing.NewHasher(authOpts, "redis"))
+			redis, err := NewRedis(authOpts, hashing.NewHasher(authOpts, "redis"))
 			assert.Nil(t, err)
 
 			ctx := context.Background()
@@ -427,7 +427,7 @@ func TestBackends(t *testing.T) {
 			// Set it as superuser.
 			redis.conn.Set(ctx, fmt.Sprintf("%s:su", username), "true", 0)
 
-			b, err := Initialize(authOpts, slog.LevelDebug, version)
+			b, err := Initialize(authOpts, version)
 			So(err, ShouldBeNil)
 
 			tt1, err1 := b.AuthUnpwdCheck(username, password, clientid)
@@ -463,7 +463,7 @@ func TestBackends(t *testing.T) {
 			password := username
 			passwordHash := "PBKDF2$sha512$100000$hgodnayqjfs0AOCxvsU+Zw==$dfc4LBGmZ/wB128NOD48qF5fCS+r/bsjU+oCXgT3UksAik73vIkXcPFydtbJKoIgnepNXP9t+zGIaR5wyRmXaA=="
 
-			redis, err := NewRedis(authOpts, slog.LevelDebug, hashing.NewHasher(authOpts, "redis"))
+			redis, err := NewRedis(authOpts, hashing.NewHasher(authOpts, "redis"))
 			assert.Nil(t, err)
 
 			ctx := context.Background()
@@ -472,7 +472,7 @@ func TestBackends(t *testing.T) {
 			redis.conn.Set(ctx, username, passwordHash, 0)
 			redis.conn.Set(ctx, fmt.Sprintf("%s:su", username), "true", 0)
 
-			b, err := Initialize(authOpts, slog.LevelDebug, version)
+			b, err := Initialize(authOpts, version)
 			So(err, ShouldBeNil)
 
 			tt1, err1 := b.AuthUnpwdCheck(username, password, clientid)
@@ -508,7 +508,7 @@ func TestBackends(t *testing.T) {
 			password := username
 			passwordHash := "PBKDF2$sha512$100000$hgodnayqjfs0AOCxvsU+Zw==$dfc4LBGmZ/wB128NOD48qF5fCS+r/bsjU+oCXgT3UksAik73vIkXcPFydtbJKoIgnepNXP9t+zGIaR5wyRmXaA=="
 
-			redis, err := NewRedis(authOpts, slog.LevelDebug, hashing.NewHasher(authOpts, "redis"))
+			redis, err := NewRedis(authOpts, hashing.NewHasher(authOpts, "redis"))
 			assert.Nil(t, err)
 
 			ctx := context.Background()
@@ -517,7 +517,7 @@ func TestBackends(t *testing.T) {
 			redis.conn.Set(ctx, username, passwordHash, 0)
 			redis.conn.Set(ctx, fmt.Sprintf("%s:su", username), "true", 0)
 
-			b, err := Initialize(authOpts, slog.LevelDebug, version)
+			b, err := Initialize(authOpts, version)
 			So(err, ShouldBeNil)
 
 			tt1, err1 := b.AuthUnpwdCheck(username, password, clientid)
@@ -552,7 +552,7 @@ func TestBackends(t *testing.T) {
 			password := username
 			passwordHash := "PBKDF2$sha512$100000$hgodnayqjfs0AOCxvsU+Zw==$dfc4LBGmZ/wB128NOD48qF5fCS+r/bsjU+oCXgT3UksAik73vIkXcPFydtbJKoIgnepNXP9t+zGIaR5wyRmXaA=="
 
-			redis, err := NewRedis(authOpts, slog.LevelDebug, hashing.NewHasher(authOpts, "redis"))
+			redis, err := NewRedis(authOpts, hashing.NewHasher(authOpts, "redis"))
 			assert.Nil(t, err)
 
 			ctx := context.Background()
@@ -561,7 +561,7 @@ func TestBackends(t *testing.T) {
 			redis.conn.Set(ctx, stripUsername, passwordHash, 0)
 			redis.conn.Set(ctx, fmt.Sprintf("%s:su", stripUsername), "true", 0)
 
-			b, err := Initialize(authOpts, slog.LevelDebug, version)
+			b, err := Initialize(authOpts, version)
 			So(err, ShouldBeNil)
 
 			userCheck, err := b.AuthUnpwdCheck(username, password, clientid)

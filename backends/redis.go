@@ -46,7 +46,7 @@ type Redis struct {
 	hasher           hashing.HashComparer
 }
 
-func NewRedis(authOpts map[string]string, logLevel slog.Level, hasher hashing.HashComparer) (Redis, error) {
+func NewRedis(authOpts map[string]string, hasher hashing.HashComparer) (Redis, error) {
 
 	var redis = Redis{
 		Host:         "localhost",

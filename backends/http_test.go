@@ -101,7 +101,7 @@ func TestHTTPAllJsonServer(t *testing.T) {
 	authOpts["http_timeout"] = "5"
 
 	Convey("Given correct options an http backend instance should be returned", t, func() {
-		hb, err := NewHTTP(authOpts, slog.LevelDebug, version)
+		hb, err := NewHTTP(authOpts, version)
 		So(err, ShouldBeNil)
 		So(hb.UserAgent, ShouldEqual, "mosquitto-2.0.0")
 		So(hb.httpMethod, ShouldEqual, http.MethodPost)
@@ -115,7 +115,7 @@ func TestHTTPAllJsonServer(t *testing.T) {
 
 			customAuthOpts["http_user_agent"] = "custom-user-agent"
 
-			customHb, err := NewHTTP(customAuthOpts, slog.LevelDebug, version)
+			customHb, err := NewHTTP(customAuthOpts, version)
 			So(err, ShouldBeNil)
 			So(customHb.UserAgent, ShouldEqual, "custom-user-agent")
 		})
@@ -129,7 +129,7 @@ func TestHTTPAllJsonServer(t *testing.T) {
 
 			customAuthOpts["http_method"] = "GET"
 
-			customHb, err := NewHTTP(customAuthOpts, slog.LevelDebug, version)
+			customHb, err := NewHTTP(customAuthOpts, version)
 			So(err, ShouldBeNil)
 			So(customHb.httpMethod, ShouldEqual, http.MethodGet)
 		})
@@ -143,7 +143,7 @@ func TestHTTPAllJsonServer(t *testing.T) {
 
 			customAuthOpts["http_method"] = "PUT"
 
-			customHb, err := NewHTTP(customAuthOpts, slog.LevelDebug, version)
+			customHb, err := NewHTTP(customAuthOpts, version)
 			So(err, ShouldBeNil)
 			So(customHb.httpMethod, ShouldEqual, http.MethodPut)
 		})
@@ -290,7 +290,7 @@ func TestHTTPJsonStatusOnlyServer(t *testing.T) {
 	authOpts["http_aclcheck_uri"] = "/acl"
 
 	Convey("Given correct options an http backend instance should be returned", t, func() {
-		hb, err := NewHTTP(authOpts, slog.LevelDebug, version)
+		hb, err := NewHTTP(authOpts, version)
 		So(err, ShouldBeNil)
 
 		Convey("Given correct password/username, get user should return true", func() {
@@ -439,7 +439,7 @@ func TestHTTPJsonTextResponseServer(t *testing.T) {
 	authOpts["http_aclcheck_uri"] = "/acl"
 
 	Convey("Given correct options an http backend instance should be returned", t, func() {
-		hb, err := NewHTTP(authOpts, slog.LevelDebug, version)
+		hb, err := NewHTTP(authOpts, version)
 		So(err, ShouldBeNil)
 
 		Convey("Given correct password/username, get user should return true", func() {
@@ -597,7 +597,7 @@ func TestHTTPFormJsonResponseServer(t *testing.T) {
 	authOpts["http_aclcheck_uri"] = "/acl"
 
 	Convey("Given correct options an http backend instance should be returned", t, func() {
-		hb, err := NewHTTP(authOpts, slog.LevelDebug, version)
+		hb, err := NewHTTP(authOpts, version)
 		So(err, ShouldBeNil)
 
 		Convey("Given correct password/username, get user should return true", func() {
@@ -733,7 +733,7 @@ func TestHTTPFormStatusOnlyServer(t *testing.T) {
 	authOpts["http_aclcheck_uri"] = "/acl"
 
 	Convey("Given correct options an http backend instance should be returned", t, func() {
-		hb, err := NewHTTP(authOpts, slog.LevelDebug, version)
+		hb, err := NewHTTP(authOpts, version)
 		So(err, ShouldBeNil)
 
 		Convey("Given correct password/username, get user should return true", func() {
@@ -874,7 +874,7 @@ func TestHTTPFormTextResponseServer(t *testing.T) {
 	authOpts["http_aclcheck_uri"] = "/acl"
 
 	Convey("Given correct options an http backend instance should be returned", t, func() {
-		hb, err := NewHTTP(authOpts, slog.LevelDebug, version)
+		hb, err := NewHTTP(authOpts, version)
 		So(err, ShouldBeNil)
 
 		Convey("Given correct password/username, get user should return true", func() {

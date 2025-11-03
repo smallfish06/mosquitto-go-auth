@@ -26,7 +26,7 @@ type Sqlite struct {
 	connectTries int
 }
 
-func NewSqlite(authOpts map[string]string, logLevel slog.Level, hasher hashing.HashComparer) (Sqlite, error) {
+func NewSqlite(authOpts map[string]string, hasher hashing.HashComparer) (Sqlite, error) {
 
 	// Set defaults for sqlite
 

@@ -16,7 +16,7 @@ type CustomPlugin struct {
 	halt         func()
 }
 
-func NewCustomPlugin(authOpts map[string]string, logLevel slog.Level) (*CustomPlugin, error) {
+func NewCustomPlugin(authOpts map[string]string) (*CustomPlugin, error) {
 	plug, err := plugin.Open(authOpts["plugin_path"])
 	if err != nil {
 		return nil, fmt.Errorf("could not init custom plugin: %s", err)
@@ -35,7 +35,7 @@ func NewCustomPlugin(authOpts map[string]string, logLevel slog.Level) (*CustomPl
 
 	initFunc := plInit.(func(authOpts map[string]string, logLevel slog.Level) error)
 
-	err = initFunc(authOpts, logLevel)
+	err = initFunc(authOpts, slog.LevelInfo)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't init plugin: %s", err)
 	}
