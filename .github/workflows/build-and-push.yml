@@ -65,11 +65,11 @@ jobs:
           
           # Extract version from tag if release, otherwise use 'dev'
           if [ "${{ github.event_name }}" == "release" ]; then
-            VERSION=${GITHUB_REF#refs/tags/}
+            VERSION=${GITHUB_REF#refs/tags/}-${{ env.MOSQUITTO_VERSION }}
           else
-            VERSION="dev"
+            VERSION="dev-${{ env.MOSQUITTO_VERSION }}"
           fi
-          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "version=${VERSION}-${{ env.MOSQUITTO_VERSION }}" >> $GITHUB_OUTPUT
           
           # Repository name (lowercase)
           REPO_NAME=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
