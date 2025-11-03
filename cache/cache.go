@@ -208,6 +208,11 @@ func (s *goStore) checkRecord(ctx context.Context, record string, expirationTime
 		item = s.client.Get(record)
 	}
 
+	// Item may be nil if it expired between Has() and Get() calls
+	if item == nil {
+		return false, false
+	}
+
 	return present, item.Value()
 }
 
