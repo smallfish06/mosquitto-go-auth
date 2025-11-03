@@ -11,13 +11,13 @@ import (
 
 	"google.golang.org/grpc/credentials/insecure"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	grpc_logrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
 	gs "github.com/iegomez/mosquitto-go-auth/grpc"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 // GRPC holds a client for the service and implements the Backend interface.
@@ -142,7 +142,7 @@ func (o *GRPC) CheckAcl(username, topic, clientid string, acc int32) (bool, erro
 // GetName gets the gRPC backend's name.
 func (o *GRPC) GetName() string {
 	if len(o.name) == 0 {
-		resp, err := o.client.GetName(context.Background(), &empty.Empty{})
+		resp, err := o.client.GetName(context.Background(), &emptypb.Empty{})
 
 		if err != nil {
 			o.name = "gRPC"
@@ -156,7 +156,7 @@ func (o *GRPC) GetName() string {
 
 // Halt signals the gRPC backend that mosquitto is halting.
 func (o *GRPC) Halt() {
-	_, err := o.client.Halt(context.Background(), &empty.Empty{})
+	_, err := o.client.Halt(context.Background(), &emptypb.Empty{})
 	if err != nil {
 		log.Errorf("grpc halt: %s", err)
 	}

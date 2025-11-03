@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 	. "github.com/iegomez/mosquitto-go-auth/backends/constants"
 	"github.com/iegomez/mosquitto-go-auth/hashing"
 	log "github.com/sirupsen/logrus"
@@ -281,11 +281,11 @@ func TestLocalPostgresJWT(t *testing.T) {
 			jwt, err := NewLocalJWTChecker(authOpts, log.DebugLevel, hashing.NewHasher(authOpts, ""), tkOptions)
 			So(err, ShouldBeNil)
 
-			//Empty db
+			// Empty db
 			db.DB.MustExec("delete from test_user where 1 = 1")
 			db.DB.MustExec("delete from test_acl where 1 = 1")
 
-			//Now test everything.
+			// Now test everything.
 
 			insertQuery := "INSERT INTO test_user(username, password_hash, is_admin) values($1, $2, $3) returning id"
 
@@ -330,7 +330,7 @@ func TestLocalPostgresJWT(t *testing.T) {
 				})
 			})
 
-			//Now create some acls and test topics
+			// Now create some acls and test topics
 
 			strictACL := "test/topic/1"
 			singleLevelACL := "test/topic/+"
@@ -379,7 +379,7 @@ func TestLocalPostgresJWT(t *testing.T) {
 
 			})
 
-			//Now insert single level topic to check against.
+			// Now insert single level topic to check against.
 
 			err = db.DB.Get(&aclID, aclQuery, userID, singleLevelACL, MOSQ_ACL_READ)
 			So(err, ShouldBeNil)
@@ -390,7 +390,7 @@ func TestLocalPostgresJWT(t *testing.T) {
 				So(tt1, ShouldBeTrue)
 			})
 
-			//Now insert hierarchy wildcard to check against.
+			// Now insert hierarchy wildcard to check against.
 
 			err = db.DB.Get(&aclID, aclQuery, userID, hierarchyACL, MOSQ_ACL_READ)
 			So(err, ShouldBeNil)
@@ -427,7 +427,7 @@ func TestLocalPostgresJWT(t *testing.T) {
 
 			})
 
-			//Empty db
+			// Empty db
 			db.DB.MustExec("delete from test_user where 1 = 1")
 			db.DB.MustExec("delete from test_acl where 1 = 1")
 
@@ -481,11 +481,11 @@ func TestLocalMysqlJWT(t *testing.T) {
 			jwt, err := NewLocalJWTChecker(authOpts, log.DebugLevel, hashing.NewHasher(authOpts, ""), tkOptions)
 			So(err, ShouldBeNil)
 
-			//Empty db
+			// Empty db
 			db.DB.MustExec("delete from test_user where 1 = 1")
 			db.DB.MustExec("delete from test_acl where 1 = 1")
 
-			//Now test everything.
+			// Now test everything.
 
 			insertQuery := "INSERT INTO test_user(username, password_hash, is_admin) values(?, ?, ?)"
 
@@ -583,7 +583,7 @@ func TestLocalMysqlJWT(t *testing.T) {
 
 			})
 
-			//Now insert single level topic to check against.
+			// Now insert single level topic to check against.
 
 			_, err = db.DB.Exec(aclQuery, userID, singleLevelACL, MOSQ_ACL_READ)
 			So(err, ShouldBeNil)
@@ -594,7 +594,7 @@ func TestLocalMysqlJWT(t *testing.T) {
 				So(tt1, ShouldBeTrue)
 			})
 
-			//Now insert hierarchy wildcard to check against.
+			// Now insert hierarchy wildcard to check against.
 
 			_, err = db.DB.Exec(aclQuery, userID, hierarchyACL, MOSQ_ACL_READ)
 			So(err, ShouldBeNil)
@@ -631,7 +631,7 @@ func TestLocalMysqlJWT(t *testing.T) {
 
 			})
 
-			//Empty db
+			// Empty db
 			db.DB.MustExec("delete from test_user where 1 = 1")
 			db.DB.MustExec("delete from test_acl where 1 = 1")
 

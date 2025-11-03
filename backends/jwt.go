@@ -3,7 +3,7 @@ package backends
 import (
 	"fmt"
 
-	jwtGo "github.com/golang-jwt/jwt"
+	jwtGo "github.com/golang-jwt/jwt/v5"
 	"github.com/iegomez/mosquitto-go-auth/hashing"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -138,7 +138,7 @@ func getJWTClaims(secret string, tokenStr string, skipExpiration bool) (*jwtGo.M
 			return nil, err
 		}
 
-		if v, ok := err.(*jwtGo.ValidationError); ok && v.Errors == jwtGo.ValidationErrorExpired {
+		if errors.Is(err, jwtGo.ErrTokenExpired) {
 			expirationError = true
 		}
 	}
