@@ -71,13 +71,13 @@ RUN set -ex; \
   if [ ! -z "$TARGETPLATFORM" ]; then \
     case "$TARGETPLATFORM" in \
   "linux/arm64") \
-    apt update && apt install -y gcc-aarch64-linux-gnu libc6-dev-arm64-cross \
+    apt update && apt install -y gcc-aarch64-linux-gnu libc6-dev-arm64-cross binutils-aarch64-linux-gnu \
     ;; \
   "linux/arm/v7") \
-    apt update && apt install -y gcc-arm-linux-gnueabihf libc6-dev-armhf-cross \
+    apt update && apt install -y gcc-arm-linux-gnueabihf libc6-dev-armhf-cross binutils-arm-linux-gnueabihf \
     ;; \
   "linux/arm/v6") \
-    apt update && apt install -y gcc-arm-linux-gnueabihf libc6-dev-armel-cross libc6-dev-armhf-cross \
+    apt update && apt install -y gcc-arm-linux-gnueabihf libc6-dev-armel-cross libc6-dev-armhf-cross binutils-arm-linux-gnueabihf \
     ;; \
   esac \
   fi
