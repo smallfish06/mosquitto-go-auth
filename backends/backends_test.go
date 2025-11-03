@@ -3,7 +3,6 @@ package backends
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"path/filepath"
 	"testing"
 

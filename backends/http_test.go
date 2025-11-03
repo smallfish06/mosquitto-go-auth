@@ -3,7 +3,7 @@ package backends
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -35,7 +35,7 @@ func TestHTTPAllJsonServer(t *testing.T) {
 		var data interface{}
 		var params map[string]interface{}
 
-		body, _ := ioutil.ReadAll(r.Body)
+		body, _ := io.ReadAll(r.Body)
 		defer r.Body.Close()
 
 		err := json.Unmarshal(body, &data)
@@ -240,7 +240,7 @@ func TestHTTPJsonStatusOnlyServer(t *testing.T) {
 		var data interface{}
 		var params map[string]interface{}
 
-		body, _ := ioutil.ReadAll(r.Body)
+		body, _ := io.ReadAll(r.Body)
 		defer r.Body.Close()
 
 		err := json.Unmarshal(body, &data)
@@ -385,7 +385,7 @@ func TestHTTPJsonTextResponseServer(t *testing.T) {
 		var data interface{}
 		var params map[string]interface{}
 
-		body, _ := ioutil.ReadAll(r.Body)
+		body, _ := io.ReadAll(r.Body)
 		defer r.Body.Close()
 
 		err := json.Unmarshal(body, &data)

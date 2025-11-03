@@ -1,7 +1,6 @@
 package backends
 
 import (
-	"log/slog"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"

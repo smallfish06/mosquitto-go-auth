@@ -2,7 +2,7 @@ package backends
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
@@ -679,7 +679,7 @@ func TestJWTAllJsonServer(t *testing.T) {
 				var data interface{}
 				var params map[string]interface{}
 
-				body, _ := ioutil.ReadAll(r.Body)
+				body, _ := io.ReadAll(r.Body)
 				defer r.Body.Close()
 
 				err := json.Unmarshal(body, &data)
@@ -860,7 +860,7 @@ func TestJWTJsonStatusOnlyServer(t *testing.T) {
 		var data interface{}
 		var params map[string]interface{}
 
-		body, _ := ioutil.ReadAll(r.Body)
+		body, _ := io.ReadAll(r.Body)
 		defer r.Body.Close()
 
 		err := json.Unmarshal(body, &data)
@@ -1004,7 +1004,7 @@ func TestJWTJsonTextResponseServer(t *testing.T) {
 		var data interface{}
 		var params map[string]interface{}
 
-		body, _ := ioutil.ReadAll(r.Body)
+		body, _ := io.ReadAll(r.Body)
 		defer r.Body.Close()
 
 		err := json.Unmarshal(body, &data)

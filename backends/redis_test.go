@@ -2,7 +2,6 @@ package backends
 
 import (
 	"context"
-	"log/slog"
 	"testing"
 
 	. "github.com/smallfish06/mosquitto-go-auth/backends/constants"

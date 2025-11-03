@@ -1,7 +1,6 @@
 package backends
 
 import (
-	"log/slog"
 	"path/filepath"
 	"testing"
 

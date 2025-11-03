@@ -5,7 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log/slog"
 	h "net/http"
 	"net/url"
@@ -253,7 +253,7 @@ func (o HTTP) httpRequest(uri, username string, dataMap map[string]interface{}, 
 		return false, err
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 
 	if err != nil {
 		slog.Error("read error", "error", err)
