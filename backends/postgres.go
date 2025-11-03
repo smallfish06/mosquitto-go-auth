@@ -2,6 +2,7 @@ package backends
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strconv"
@@ -9,7 +10,6 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
-	"github.com/pkg/errors"
 	"github.com/smallfish06/mosquitto-go-auth/backends/topics"
 	"github.com/smallfish06/mosquitto-go-auth/hashing"
 )
@@ -120,7 +120,7 @@ func NewPostgres(authOpts map[string]string, hasher hashing.HashComparer) (Postg
 
 	// Exit if any mandatory option is missing.
 	if !pgOk {
-		return postgres, errors.Errorf("PG backend error: missing options: %s", missingOptions)
+		return postgres, fmt.Errorf("PG backend error: missing options: %s", missingOptions)
 	}
 
 	// Build the dsn string and try to connect to the db.
@@ -173,7 +173,7 @@ func NewPostgres(authOpts map[string]string, hasher hashing.HashComparer) (Postg
 	postgres.DB, err = OpenDatabase(connStr, "postgres", postgres.connectTries, postgres.maxLifeTime)
 
 	if err != nil {
-		return postgres, errors.Errorf("PG backend error: couldn't open db: %s", err)
+		return postgres, fmt.Errorf("PG backend error: couldn't open db: %s", err.Error())
 	}
 
 	return postgres, nil
@@ -187,7 +187,7 @@ func (o Postgres) GetUser(username, password, clientid string) (bool, error) {
 	err := o.DB.Get(&pwHash, o.UserQuery, username)
 
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			// avoid leaking the fact that user exists or not though error.
 			return false, nil
 		}
@@ -221,7 +221,7 @@ func (o Postgres) GetSuperuser(username string) (bool, error) {
 	err := o.DB.Get(&count, o.SuperuserQuery, username)
 
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			// avoid leaking the fact that user exists or not though error.
 			return false, nil
 		}

@@ -5,12 +5,12 @@ import (
 	"crypto/subtle"
 	"encoding/base64"
 	"fmt"
+	"log/slog"
 	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/argon2"
-	"log/slog"
 )
 
 type argon2IDHasher struct {

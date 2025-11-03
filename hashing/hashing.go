@@ -144,6 +144,4 @@ func NewHasher(authOpts map[string]string, backend string) HashComparer {
 
 	saltEncoding := opts["hasher_salt_encoding"]
 	return NewPBKDF2Hasher(saltSize, iterations, algorithm, saltEncoding, keyLen)
-
-	return nil
 }

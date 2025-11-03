@@ -3,12 +3,12 @@ package backends
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
 	"time"
 
-	"github.com/pkg/errors"
 	. "github.com/smallfish06/mosquitto-go-auth/backends/constants"
 	"github.com/smallfish06/mosquitto-go-auth/backends/topics"
 	"github.com/smallfish06/mosquitto-go-auth/hashing"
@@ -136,7 +136,7 @@ func NewMongo(authOpts map[string]string, hasher hashing.HashComparer) (Mongo, e
 
 	client, err := mongo.Connect(context.TODO(), &opts)
 	if err != nil {
-		return m, errors.Errorf("couldn't start mongo backend: %s", err)
+		return m, fmt.Errorf("couldn't start mongo backend: %s", err.Error())
 	}
 
 	m.Conn = client
@@ -154,7 +154,7 @@ func (o Mongo) GetUser(username, password, clientid string) (bool, error) {
 
 	err := uc.FindOne(context.TODO(), bson.M{"username": username}).Decode(&user)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			// avoid leaking the fact that user exists or not though error.
 			return false, nil
 		}
@@ -184,7 +184,7 @@ func (o Mongo) GetSuperuser(username string) (bool, error) {
 
 	err := uc.FindOne(context.TODO(), bson.M{"username": username}).Decode(&user)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			// avoid leaking the fact that user exists or not though error.
 			return false, nil
 		}
@@ -207,7 +207,7 @@ func (o Mongo) CheckAcl(username, topic, clientid string, acc int32) (bool, erro
 
 	err := uc.FindOne(context.TODO(), bson.M{"username": username}).Decode(&user)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			// avoid leaking the fact that user exists or not though error.
 			return false, nil
 		}

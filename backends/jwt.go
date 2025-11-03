@@ -182,7 +182,7 @@ func getClaimsForToken(options tokenOptions, tokenStr string, skipExpiration boo
 		return make(map[string]interface{}), err
 	}
 
-	return map[string]interface{}(*claims), nil
+	return *claims, nil
 }
 
 func getIssForToken(options tokenOptions, tokenStr string, skipExpiration bool) (string, error) {

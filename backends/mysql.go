@@ -4,15 +4,15 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"database/sql"
+	"errors"
 	"fmt"
-	"io/ioutil"
 	"log/slog"
+	"os"
 	"strconv"
 	"strings"
 
 	mq "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
-	"github.com/pkg/errors"
 
 	"github.com/smallfish06/mosquitto-go-auth/backends/topics"
 	"github.com/smallfish06/mosquitto-go-auth/hashing"
@@ -157,7 +157,7 @@ func NewMysql(authOpts map[string]string, hasher hashing.HashComparer) (Mysql, e
 
 	// Exit if any mandatory option is missing.
 	if !mysqlOk {
-		return mysql, errors.Errorf("MySql backend error: missing options: %s", missingOptions)
+		return mysql, fmt.Errorf("MySql backend error: missing options: %s", missingOptions)
 	}
 
 	var msConfig = mq.Config{
@@ -173,12 +173,12 @@ func NewMysql(authOpts map[string]string, hasher hashing.HashComparer) (Mysql, e
 	if customSSL {
 
 		rootCertPool := x509.NewCertPool()
-		pem, err := ioutil.ReadFile(mysql.SSLRootCert)
+		pem, err := os.ReadFile(mysql.SSLRootCert)
 		if err != nil {
-			return mysql, errors.Errorf("Mysql read root CA error: %s", err)
+			return mysql, fmt.Errorf("mysql read root CA error: %s", err.Error())
 		}
 		if ok := rootCertPool.AppendCertsFromPEM(pem); !ok {
-			return mysql, errors.Errorf("Mysql failed to append root CA pem error: %s", err)
+			return mysql, errors.New("mysql failed to append root CA pem error")
 		}
 
 		tlsConfig := &tls.Config{
@@ -190,7 +190,7 @@ func NewMysql(authOpts map[string]string, hasher hashing.HashComparer) (Mysql, e
 				clientCert := make([]tls.Certificate, 0, 1)
 				certs, err := tls.LoadX509KeyPair(mysql.SSLCert, mysql.SSLKey)
 				if err != nil {
-					return mysql, errors.Errorf("Mysql load key and cert error: %s", err)
+					return mysql, fmt.Errorf("mysql load key and cert error: %s", err.Error())
 				}
 				clientCert = append(clientCert, certs)
 				tlsConfig.Certificates = clientCert
@@ -201,7 +201,7 @@ func NewMysql(authOpts map[string]string, hasher hashing.HashComparer) (Mysql, e
 
 		err = mq.RegisterTLSConfig("custom", tlsConfig)
 		if err != nil {
-			return mysql, errors.Errorf("Mysql register TLS config error: %s", err)
+			return mysql, fmt.Errorf("mysql register TLS config error: %s", err.Error())
 		}
 	}
 
@@ -227,7 +227,7 @@ func NewMysql(authOpts map[string]string, hasher hashing.HashComparer) (Mysql, e
 	mysql.DB, err = OpenDatabase(msConfig.FormatDSN(), "mysql", mysql.connectTries, mysql.maxLifeTime)
 
 	if err != nil {
-		return mysql, errors.Errorf("MySql backend error: couldn't open db: %s", err)
+		return mysql, fmt.Errorf("MySql backend error: couldn't open db: %s", err)
 	}
 
 	return mysql, nil
@@ -241,7 +241,7 @@ func (o Mysql) GetUser(username, password, clientid string) (bool, error) {
 	err := o.DB.Get(&pwHash, o.UserQuery, username)
 
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			// avoid leaking the fact that user exists or not though error.
 			return false, nil
 		}
@@ -275,7 +275,7 @@ func (o Mysql) GetSuperuser(username string) (bool, error) {
 	err := o.DB.Get(&count, o.SuperuserQuery, username)
 
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			// avoid leaking the fact that user exists or not though error.
 			return false, nil
 		}

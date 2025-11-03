@@ -1,12 +1,12 @@
 package backends
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
 	"strconv"
 
 	"github.com/go-ldap/ldap/v3"
-	"github.com/pkg/errors"
 	"github.com/smallfish06/mosquitto-go-auth/backends/topics"
 )
 
@@ -112,7 +112,7 @@ func NewLDAPWithFactory(authOpts map[string]string, ldapClientFactory LDAPClient
 
 	// Exit if any mandatory option is missing.
 	if !ldapOk {
-		return l, errors.Errorf("LDAP backend error: missing options:%s", missingOptions)
+		return l, fmt.Errorf("LDAP backend error: missing options:%s", missingOptions)
 	}
 
 	// Check if the LDAP server is reachable
@@ -160,7 +160,8 @@ func (l LDAP) GetUser(username, password, clientid string) (bool, error) {
 	searchResult, err := l.client.Search(searchRequest)
 
 	if err != nil {
-		if ldapErr, ok := err.(*ldap.Error); ok && ldapErr.ResultCode == ldap.LDAPResultNoSuchObject {
+		var ldapErr *ldap.Error
+		if errors.As(err, &ldapErr) && ldapErr.ResultCode == ldap.LDAPResultNoSuchObject {
 			slog.Debug("LDAP user search returned no such object (code 32)")
 
 			return false, nil
@@ -228,7 +229,8 @@ func (l LDAP) GetSuperuser(username string) (bool, error) {
 	searchResult, err := l.client.Search(searchRequest)
 
 	if err != nil {
-		if ldapErr, ok := err.(*ldap.Error); ok && ldapErr.ResultCode == ldap.LDAPResultNoSuchObject {
+		var ldapErr *ldap.Error
+		if errors.As(err, &ldapErr) && ldapErr.ResultCode == ldap.LDAPResultNoSuchObject {
 			slog.Debug("LDAP superuser search returned no such object (code 32)")
 
 			return false, nil
@@ -250,7 +252,7 @@ func (l LDAP) GetSuperuser(username string) (bool, error) {
 
 func (l LDAP) CheckAcl(username, topic, clientid string, acc int32) (bool, error) {
 
-	attributes := []string{}
+	var attributes []string
 
 	if l.AclTopicPatternAttribute != "" {
 		attributes = append(attributes, l.AclTopicPatternAttribute)
@@ -286,7 +288,8 @@ func (l LDAP) CheckAcl(username, topic, clientid string, acc int32) (bool, error
 	searchResult, err := l.client.Search(searchRequest)
 
 	if err != nil {
-		if ldapErr, ok := err.(*ldap.Error); ok && ldapErr.ResultCode == ldap.LDAPResultNoSuchObject {
+		var ldapErr *ldap.Error
+		if errors.As(err, &ldapErr) && ldapErr.ResultCode == ldap.LDAPResultNoSuchObject {
 			slog.Debug("LDAP acl search returned no such object (code 32)")
 
 			return false, nil

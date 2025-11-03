@@ -27,7 +27,7 @@ var jwtSecret = "some_jwt_secret"
 // Generate the token.
 var now = time.Now()
 var nowSecondsSinceEpoch = now.Unix()
-var expSecondsSinceEpoch int64 = nowSecondsSinceEpoch + int64(time.Hour*24/time.Second)
+var expSecondsSinceEpoch = nowSecondsSinceEpoch + int64(time.Hour*24/time.Second)
 
 var jwtToken = jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 	"iss":      "jwt-test",

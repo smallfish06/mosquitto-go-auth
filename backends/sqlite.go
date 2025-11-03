@@ -2,13 +2,14 @@ package backends
 
 import (
 	"database/sql"
+	"errors"
+	"fmt"
 	"log/slog"
 	"strconv"
 	"strings"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/pkg/errors"
 	"github.com/smallfish06/mosquitto-go-auth/backends/topics"
 	"github.com/smallfish06/mosquitto-go-auth/hashing"
 )
@@ -71,7 +72,7 @@ func NewSqlite(authOpts map[string]string, hasher hashing.HashComparer) (Sqlite,
 
 	// Exit if any mandatory option is missing.
 	if !sqliteOk {
-		return sqlite, errors.Errorf("sqlite backend error: missing options: %s", missingOptions)
+		return sqlite, fmt.Errorf("sqlite backend error: missing options: %s", missingOptions)
 	}
 
 	// Build the dsn string and try to connect to the db.
@@ -94,7 +95,7 @@ func NewSqlite(authOpts map[string]string, hasher hashing.HashComparer) (Sqlite,
 	sqlite.DB, err = OpenDatabase(connStr, "sqlite3", sqlite.connectTries, sqlite.maxLifeTime)
 
 	if err != nil {
-		return sqlite, errors.Errorf("sqlite backend error: couldn't open db %s: %s", connStr, err)
+		return sqlite, fmt.Errorf("sqlite backend error: couldn't open db %s: %s", connStr, err.Error())
 	}
 
 	return sqlite, nil
@@ -108,7 +109,7 @@ func (o Sqlite) GetUser(username, password, clientid string) (bool, error) {
 	err := o.DB.Get(&pwHash, o.UserQuery, username)
 
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			// avoid leaking the fact that user exists or not though error.
 			return false, nil
 		}
@@ -142,7 +143,7 @@ func (o Sqlite) GetSuperuser(username string) (bool, error) {
 	err := o.DB.Get(&count, o.SuperuserQuery, username)
 
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			// avoid leaking the fact that user exists or not though error.
 			return false, nil
 		}

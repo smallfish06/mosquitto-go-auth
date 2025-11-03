@@ -7,12 +7,12 @@ import (
 	"crypto/sha512"
 	"encoding/base64"
 	"fmt"
+	"log/slog"
 	"math/big"
 	"strconv"
 	"strings"
 
 	"golang.org/x/crypto/pbkdf2"
-	"log/slog"
 )
 
 type pbkdf2Hasher struct {
