@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"strings"
 
-	"github.com/iegomez/mosquitto-go-auth/hashing"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"github.com/smallfish06/mosquitto-go-auth/hashing"
 )
 
 type localJWTChecker struct {

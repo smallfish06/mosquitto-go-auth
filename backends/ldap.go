@@ -3,9 +3,9 @@ package backends
 import (
 	"fmt"
 	"github.com/go-ldap/ldap/v3"
-	"github.com/iegomez/mosquitto-go-auth/backends/topics"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"github.com/smallfish06/mosquitto-go-auth/backends/topics"
 	"strconv"
 )
 
@@ -111,12 +111,12 @@ func NewLDAPWithFactory(authOpts map[string]string, logLevel log.Level, ldapClie
 		l.AclAccAttribute = aclAccAttribute
 	}
 
-	//Exit if any mandatory option is missing.
+	// Exit if any mandatory option is missing.
 	if !ldapOk {
 		return l, errors.Errorf("LDAP backend error: missing options:%s", missingOptions)
 	}
 
-	//Check if the LDAP server is reachable
+	// Check if the LDAP server is reachable
 	ldapClient, err := l.factory(l)
 
 	if err != nil {
@@ -209,7 +209,7 @@ func (l LDAP) GetUser(username, password, clientid string) (bool, error) {
 
 func (l LDAP) GetSuperuser(username string) (bool, error) {
 
-	//If there's no superuser filter, return false.
+	// If there's no superuser filter, return false.
 	if l.SuperuserFilter == "" {
 		return false, nil
 	}
@@ -261,12 +261,12 @@ func (l LDAP) CheckAcl(username, topic, clientid string, acc int32) (bool, error
 		attributes = append(attributes, l.AclAccAttribute)
 	}
 
-	//If there are no acl attributes defined, assume all privileges for all users.
+	// If there are no acl attributes defined, assume all privileges for all users.
 	if len(attributes) == 0 {
 		return true, nil
 	}
 
-	//If there is no groupBaseDN, return false.
+	// If there is no groupBaseDN, return false.
 	if l.GroupDN == "" {
 		log.Errorf("ldap_group_base_dn not set, cannot check ACL")
 		return false, nil

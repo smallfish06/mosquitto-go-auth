@@ -3,9 +3,9 @@ package backends
 import (
 	"strconv"
 
-	"github.com/iegomez/mosquitto-go-auth/backends/js"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"github.com/smallfish06/mosquitto-go-auth/backends/js"
 )
 
 type Javascript struct {
@@ -85,7 +85,7 @@ func NewJavascript(authOpts map[string]string, logLevel log.Level) (*Javascript,
 		missingOptions += " js_acl_script_path"
 	}
 
-	//Exit if any mandatory option is missing.
+	// Exit if any mandatory option is missing.
 	if !jsOk {
 		return nil, errors.Errorf("Javascript backend error: missing options: %s", missingOptions)
 	}
@@ -139,7 +139,7 @@ func (o *Javascript) CheckAcl(username, topic, clientid string, acc int32) (bool
 	return granted, err
 }
 
-//GetName returns the backend's name
+// GetName returns the backend's name
 func (o *Javascript) GetName() string {
 	return "Javascript"
 }

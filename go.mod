@@ -1,4 +1,4 @@
-module github.com/iegomez/mosquitto-go-auth
+module github.com/smallfish06/mosquitto-go-auth
 
 go 1.24.0
 

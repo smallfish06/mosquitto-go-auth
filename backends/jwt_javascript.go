@@ -3,9 +3,9 @@ package backends
 import (
 	"strconv"
 
-	"github.com/iegomez/mosquitto-go-auth/backends/js"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"github.com/smallfish06/mosquitto-go-auth/backends/js"
 )
 
 type jsJWTChecker struct {

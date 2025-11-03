@@ -8,8 +8,8 @@ import (
 	"net"
 	"testing"
 
-	gs "github.com/iegomez/mosquitto-go-auth/grpc"
 	log "github.com/sirupsen/logrus"
+	gs "github.com/smallfish06/mosquitto-go-auth/grpc"
 	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"

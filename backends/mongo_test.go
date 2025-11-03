@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	. "github.com/iegomez/mosquitto-go-auth/backends/constants"
-	"github.com/iegomez/mosquitto-go-auth/hashing"
 	log "github.com/sirupsen/logrus"
+	. "github.com/smallfish06/mosquitto-go-auth/backends/constants"
+	"github.com/smallfish06/mosquitto-go-auth/hashing"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -17,7 +17,7 @@ func TestMongoRaw(t *testing.T) {
 	const mongoPort = "27017"
 	const mongoDbName = "mosquitto_test"
 
-	//MQTT ACL Patterns
+	// MQTT ACL Patterns
 	const strictAcl = "test/topic/1"
 	const singleLevelAcl = "single/topic/+"
 	const hierarchyAcl = "hierarchy/#"
@@ -26,7 +26,7 @@ func TestMongoRaw(t *testing.T) {
 	const writeAcl = "write/test"
 	const readWriteAcl = "test/readwrite/1"
 
-	//Define Users, username1 is RAW salt, username2 is UTF-8 salt
+	// Define Users, username1 is RAW salt, username2 is UTF-8 salt
 	const username1 = "test"
 	const userPass1 = "testpw"
 	const userPassHash1 = "PBKDF2$sha512$100000$os24lcPr9cJt2QDVWssblQ==$BK1BQ2wbwU1zNxv3Ml3wLuu5//hPop3/LvaPYjjCwdBvnpwusnukJPpcXQzyyjOlZdieXTx6sXAcX4WnZRZZnw=="
@@ -35,7 +35,7 @@ func TestMongoRaw(t *testing.T) {
 	const userPassHash2 = "PBKDF2$sha512$100000$os24lcPr9cJt2QDVWssblQ==$dEOwgFUoMNt+Q8FHWXl03pZTg/RY47JdSTAx/KjhYKpbugOYg1WWG0tW0V2aqBnSCDLYJdRrkNf3p/PUoKLvkA=="
 	const wrongUsername = "not_present"
 
-	//Define Common Mongo Configuration
+	// Define Common Mongo Configuration
 	var authOpts = make(map[string]string)
 	authOpts["mongo_host"] = mongoHost
 	authOpts["mongo_port"] = mongoPort
@@ -172,7 +172,7 @@ func TestMongoRaw(t *testing.T) {
 			So(err1, ShouldBeNil)
 			So(tt1, ShouldBeTrue)
 		})
-		//Now test against a publish subscription
+		// Now test against a publish subscription
 		Convey("Given a publish attempt for a read only acl, acl check should fail", func() {
 			tt1, err1 := mongo.CheckAcl(username1, strictAcl, clientID, MOSQ_ACL_WRITE)
 			So(err1, ShouldBeNil)
@@ -204,7 +204,7 @@ func TestMongoRaw(t *testing.T) {
 	})
 }
 
-//UTF-8 salt and basic testing
+// UTF-8 salt and basic testing
 func TestMongoUtf8(t *testing.T) {
 
 	// Mongo Connection Details
@@ -212,14 +212,14 @@ func TestMongoUtf8(t *testing.T) {
 	const mongoPort = "27017"
 	const mongoDbName = "mosquitto_test"
 
-	//MQTT ACL Patterns
+	// MQTT ACL Patterns
 	const strictAcl = "test/topic/1"
 	const singleLevelAcl = "single/topic/+"
 	const hierarchyAcl = "hierarchy/#"
 	const writeAcl = "write/test"
 	const readWriteAcl = "test/readwrite/1"
 
-	//Define Users, username1 is RAW salt, username2 is UTF-8 salt
+	// Define Users, username1 is RAW salt, username2 is UTF-8 salt
 	const username1 = "test"
 	const userPass1 = "testpw"
 	const userPassHash1 = "PBKDF2$sha512$100000$os24lcPr9cJt2QDVWssblQ==$BK1BQ2wbwU1zNxv3Ml3wLuu5//hPop3/LvaPYjjCwdBvnpwusnukJPpcXQzyyjOlZdieXTx6sXAcX4WnZRZZnw=="
@@ -227,7 +227,7 @@ func TestMongoUtf8(t *testing.T) {
 	const userPass2 = "testpw"
 	const userPassHash2 = "PBKDF2$sha512$100000$os24lcPr9cJt2QDVWssblQ==$dEOwgFUoMNt+Q8FHWXl03pZTg/RY47JdSTAx/KjhYKpbugOYg1WWG0tW0V2aqBnSCDLYJdRrkNf3p/PUoKLvkA=="
 
-	//Define Common Mongo Configuration
+	// Define Common Mongo Configuration
 	var authOpts = make(map[string]string)
 	authOpts["mongo_host"] = mongoHost
 	authOpts["mongo_port"] = mongoPort

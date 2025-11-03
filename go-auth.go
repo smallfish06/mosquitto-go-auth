@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	bes "github.com/iegomez/mosquitto-go-auth/backends"
-	"github.com/iegomez/mosquitto-go-auth/cache"
-	"github.com/iegomez/mosquitto-go-auth/hashing"
 	log "github.com/sirupsen/logrus"
+	bes "github.com/smallfish06/mosquitto-go-auth/backends"
+	"github.com/smallfish06/mosquitto-go-auth/cache"
+	"github.com/smallfish06/mosquitto-go-auth/hashing"
 )
 
 type AuthPlugin struct {
@@ -35,8 +35,8 @@ const (
 	AuthError    = 2
 )
 
-var authOpts map[string]string //Options passed by mosquitto.
-var authPlugin AuthPlugin      //General struct with options and conf.
+var authOpts map[string]string // Options passed by mosquitto.
+var authPlugin AuthPlugin      // General struct with options and conf.
 
 //export AuthPluginInit
 func AuthPluginInit(keys []*C.char, values []*C.char, authOptsNum int, version *C.char) {
@@ -44,7 +44,7 @@ func AuthPluginInit(keys []*C.char, values []*C.char, authOptsNum int, version *
 		FullTimestamp: true,
 	})
 
-	//Initialize auth plugin struct with default and given values.
+	// Initialize auth plugin struct with default and given values.
 	authPlugin = AuthPlugin{
 		logLevel: log.InfoLevel,
 		ctx:      context.Background(),
@@ -71,7 +71,7 @@ func AuthPluginInit(keys []*C.char, values []*C.char, authOptsNum int, version *
 		authPlugin.useClientidAsUsername = false
 	}
 
-	//Check if log level is given. Set level if any valid option is given.
+	// Check if log level is given. Set level if any valid option is given.
 	if logLevel, ok := authOpts["log_level"]; ok {
 		logLevel = strings.Replace(logLevel, " ", "", -1)
 		switch logLevel {
@@ -407,7 +407,7 @@ func AuthPskKeyGet() bool {
 //export AuthPluginCleanup
 func AuthPluginCleanup() {
 	log.Info("Cleaning up plugin")
-	//If cache is set, close cache connection.
+	// If cache is set, close cache connection.
 	if authPlugin.cache != nil {
 		authPlugin.cache.Close()
 	}

@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package grpc;
 
-option go_package = "github.com/iegomez/mosquitto-go-auth/grpc";
+option go_package = "github.com/smallfish06/mosquitto-go-auth/grpc";
 
 import "google/protobuf/empty.proto";
 

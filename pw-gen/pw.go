@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/iegomez/mosquitto-go-auth/hashing"
+	"github.com/smallfish06/mosquitto-go-auth/hashing"
 )
 
 func main() {

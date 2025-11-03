@@ -12,9 +12,9 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 
 	grpc_logrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
-	gs "github.com/iegomez/mosquitto-go-auth/grpc"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	gs "github.com/smallfish06/mosquitto-go-auth/grpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/protobuf/types/known/emptypb"

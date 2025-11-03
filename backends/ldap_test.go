@@ -1,7 +1,7 @@
 package backends
 
 import (
-	. "github.com/iegomez/mosquitto-go-auth/backends/constants"
+	. "github.com/smallfish06/mosquitto-go-auth/backends/constants"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 )
