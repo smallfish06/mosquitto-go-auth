@@ -128,7 +128,7 @@ func TestGoStore(t *testing.T) {
 	assert.False(t, granted)
 
 	// Check expiration is refreshed.
-	store = NewGoStore(authExpiration, aclExpiration, authExpiration, aclJitter, true)
+	store = NewGoStore(authExpiration, aclExpiration, authJitter, aclJitter, true)
 
 	// Test granted access.
 	err = store.SetAuthRecord(ctx, username, password, "true")
