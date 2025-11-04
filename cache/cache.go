@@ -6,13 +6,14 @@ import (
 	b64 "encoding/base64"
 	"fmt"
 	"hash"
+	"log/slog"
 	"math/rand"
 	"strings"
 	"time"
 
 	goredis "github.com/go-redis/redis/v8"
 	"github.com/jellydator/ttlcache/v3"
-	log "github.com/sirupsen/logrus"
+
 	bes "github.com/smallfish06/mosquitto-go-auth/backends"
 )
 
@@ -112,13 +113,13 @@ func NewRedisClusterStore(password string, addresses []string, authExpiration, a
 
 func toAuthRecord(username, password string, h hash.Hash) string {
 	sum := h.Sum([]byte(fmt.Sprintf("auth-%s-%s", username, password)))
-	log.Debugf("to auth record: %v\n", sum)
+	slog.Debug("to auth record", "sum", sum)
 	return b64.StdEncoding.EncodeToString(sum)
 }
 
 func toACLRecord(username, topic, clientid string, acc int, h hash.Hash) string {
 	sum := h.Sum([]byte(fmt.Sprintf("acl-%s-%s-%s-%d", username, topic, clientid, acc)))
-	log.Debugf("to auth record: %v\n", sum)
+	slog.Debug("to acl record", "sum", sum)
 	return b64.StdEncoding.EncodeToString(sum)
 }
 
@@ -149,10 +150,10 @@ func expirationWithJitter(expiration, jitter time.Duration) time.Duration {
 
 // Connect flushes the cache if reset is set.
 func (s *goStore) Connect(ctx context.Context, reset bool) bool {
-	log.Infoln("started go-cache")
+	slog.Info("started go-cache")
 	if reset {
 		s.client.DeleteAll()
-		log.Infoln("flushed go-cache")
+		slog.Info("flushed go-cache")
 	}
 	return true
 }
@@ -161,14 +162,14 @@ func (s *goStore) Connect(ctx context.Context, reset bool) bool {
 func (s *redisStore) Connect(ctx context.Context, reset bool) bool {
 	_, err := s.client.Ping(ctx).Result()
 	if err != nil {
-		log.Errorf("couldn't start redis. error: %s", err)
+		slog.Error("couldn't start redis", "error", err)
 		return false
 	} else {
-		log.Infoln("started redis cache")
+		slog.Info("started redis cache")
 		// Check if cache must be reset
 		if reset {
 			s.client.FlushDB(ctx)
-			log.Infoln("flushed redis cache")
+			slog.Info("flushed redis cache")
 		}
 	}
 	return true
@@ -243,7 +244,7 @@ func (s *redisStore) checkRecord(ctx context.Context, record string, expirationT
 	}
 
 	if err != nil {
-		log.Debugf("set cache error: %s", err)
+		slog.Debug("set cache error", "error", err)
 	}
 
 	return present, granted

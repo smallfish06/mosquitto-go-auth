@@ -2,13 +2,14 @@ package backends
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"log/slog"
 	"strconv"
 	"strings"
 	"time"
 
 	goredis "github.com/go-redis/redis/v8"
-	log "github.com/sirupsen/logrus"
 	. "github.com/smallfish06/mosquitto-go-auth/backends/constants"
 	"github.com/smallfish06/mosquitto-go-auth/backends/topics"
 	"github.com/smallfish06/mosquitto-go-auth/hashing"
@@ -46,9 +47,7 @@ type Redis struct {
 	hasher           hashing.HashComparer
 }
 
-func NewRedis(authOpts map[string]string, logLevel log.Level, hasher hashing.HashComparer) (Redis, error) {
-
-	log.SetLevel(logLevel)
+func NewRedis(authOpts map[string]string, hasher hashing.HashComparer) (Redis, error) {
 
 	var redis = Redis{
 		Host:         "localhost",
@@ -114,7 +113,7 @@ func NewRedis(authOpts map[string]string, logLevel log.Level, hasher hashing.Has
 
 	for {
 		if _, err := redis.conn.Ping(redis.ctx).Result(); err != nil {
-			log.Errorf("ping redis error, will retry in 2s: %s", err)
+			slog.Error("ping redis error, will retry in 2s", "error", err)
 			time.Sleep(2 * time.Second)
 		} else {
 			break
@@ -151,14 +150,14 @@ func (o Redis) GetUser(username, password, _ string) (bool, error) {
 	}
 
 	if err != nil {
-		log.Debugf("redis get user error: %s", err)
+		slog.Debug("redis get user error", "error", err)
 	}
 	return ok, err
 }
 
 func (o Redis) getUser(username, password string) (bool, error) {
 	pwHash, err := o.conn.Get(o.ctx, username).Result()
-	if err == goredis.Nil {
+	if errors.Is(err, goredis.Nil) {
 		return false, nil
 	} else if err != nil {
 		return false, err
@@ -191,7 +190,7 @@ func (o Redis) GetSuperuser(username string) (bool, error) {
 	}
 
 	if err != nil {
-		log.Debugf("redis get superuser error: %s", err)
+		slog.Debug("redis get superuser error", "error", err)
 	}
 
 	return ok, err
@@ -199,7 +198,7 @@ func (o Redis) GetSuperuser(username string) (bool, error) {
 
 func (o Redis) getSuperuser(username string) (bool, error) {
 	isSuper, err := o.conn.Get(o.ctx, fmt.Sprintf("%s:su", username)).Result()
-	if err == goredis.Nil {
+	if errors.Is(err, goredis.Nil) {
 		return false, nil
 	} else if err != nil {
 		return false, err
@@ -227,7 +226,7 @@ func (o Redis) CheckAcl(username, topic, clientid string, acc int32) (bool, erro
 	}
 
 	if err != nil {
-		log.Debugf("redis check acl error: %s", err)
+		slog.Debug("redis check acl error", "error", err)
 	}
 	return ok, err
 }
@@ -244,7 +243,7 @@ func (o Redis) checkAcl(username, topic, clientid string, acc int32) (bool, erro
 		// Get all user subscribe acls.
 		var err error
 		acls, err = o.conn.SMembers(o.ctx, fmt.Sprintf("%s:sacls", username)).Result()
-		if err == goredis.Nil {
+		if errors.Is(err, goredis.Nil) {
 			return false, nil
 		} else if err != nil {
 			return false, err
@@ -252,7 +251,7 @@ func (o Redis) checkAcl(username, topic, clientid string, acc int32) (bool, erro
 
 		// Get common subscribe acls.
 		commonAcls, err = o.conn.SMembers(o.ctx, "common:sacls").Result()
-		if err == goredis.Nil {
+		if errors.Is(err, goredis.Nil) {
 			return false, nil
 		} else if err != nil {
 			return false, err
@@ -261,13 +260,13 @@ func (o Redis) checkAcl(username, topic, clientid string, acc int32) (bool, erro
 	case MOSQ_ACL_READ:
 		// Get all user read and readwrite acls.
 		urAcls, err := o.conn.SMembers(o.ctx, fmt.Sprintf("%s:racls", username)).Result()
-		if err == goredis.Nil {
+		if errors.Is(err, goredis.Nil) {
 			return false, nil
 		} else if err != nil {
 			return false, err
 		}
 		urwAcls, err := o.conn.SMembers(o.ctx, fmt.Sprintf("%s:rwacls", username)).Result()
-		if err == goredis.Nil {
+		if errors.Is(err, goredis.Nil) {
 			return false, nil
 		} else if err != nil {
 			return false, err
@@ -275,13 +274,13 @@ func (o Redis) checkAcl(username, topic, clientid string, acc int32) (bool, erro
 
 		// Get common read and readwrite acls
 		rAcls, err := o.conn.SMembers(o.ctx, "common:racls").Result()
-		if err == goredis.Nil {
+		if errors.Is(err, goredis.Nil) {
 			return false, nil
 		} else if err != nil {
 			return false, err
 		}
 		rwAcls, err := o.conn.SMembers(o.ctx, "common:rwacls").Result()
-		if err == goredis.Nil {
+		if errors.Is(err, goredis.Nil) {
 			return false, nil
 		} else if err != nil {
 			return false, err
@@ -297,13 +296,13 @@ func (o Redis) checkAcl(username, topic, clientid string, acc int32) (bool, erro
 	case MOSQ_ACL_WRITE:
 		// Get all user write and readwrite acls.
 		uwAcls, err := o.conn.SMembers(o.ctx, fmt.Sprintf("%s:wacls", username)).Result()
-		if err == goredis.Nil {
+		if errors.Is(err, goredis.Nil) {
 			return false, nil
 		} else if err != nil {
 			return false, err
 		}
 		urwAcls, err := o.conn.SMembers(o.ctx, fmt.Sprintf("%s:rwacls", username)).Result()
-		if err == goredis.Nil {
+		if errors.Is(err, goredis.Nil) {
 			return false, nil
 		} else if err != nil {
 			return false, err
@@ -311,13 +310,13 @@ func (o Redis) checkAcl(username, topic, clientid string, acc int32) (bool, erro
 
 		// Get common write and readwrite acls
 		wAcls, err := o.conn.SMembers(o.ctx, "common:wacls").Result()
-		if err == goredis.Nil {
+		if errors.Is(err, goredis.Nil) {
 			return false, nil
 		} else if err != nil {
 			return false, err
 		}
 		rwAcls, err := o.conn.SMembers(o.ctx, "common:rwacls").Result()
-		if err == goredis.Nil {
+		if errors.Is(err, goredis.Nil) {
 			return false, nil
 		} else if err != nil {
 			return false, err
@@ -360,7 +359,7 @@ func (o Redis) Halt() {
 	if o.conn != nil {
 		err := o.conn.Close()
 		if err != nil {
-			log.Errorf("Redis cleanup error: %s", err)
+			slog.Error("Redis cleanup error", "error", err)
 		}
 	}
 }

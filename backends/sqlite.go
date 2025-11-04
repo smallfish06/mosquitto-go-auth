@@ -2,13 +2,14 @@ package backends
 
 import (
 	"database/sql"
+	"errors"
+	"fmt"
+	"log/slog"
 	"strconv"
 	"strings"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 	"github.com/smallfish06/mosquitto-go-auth/backends/topics"
 	"github.com/smallfish06/mosquitto-go-auth/hashing"
 )
@@ -26,9 +27,7 @@ type Sqlite struct {
 	connectTries int
 }
 
-func NewSqlite(authOpts map[string]string, logLevel log.Level, hasher hashing.HashComparer) (Sqlite, error) {
-
-	log.SetLevel(logLevel)
+func NewSqlite(authOpts map[string]string, hasher hashing.HashComparer) (Sqlite, error) {
 
 	// Set defaults for sqlite
 
@@ -73,7 +72,7 @@ func NewSqlite(authOpts map[string]string, logLevel log.Level, hasher hashing.Ha
 
 	// Exit if any mandatory option is missing.
 	if !sqliteOk {
-		return sqlite, errors.Errorf("sqlite backend error: missing options: %s", missingOptions)
+		return sqlite, fmt.Errorf("sqlite backend error: missing options: %s", missingOptions)
 	}
 
 	// Build the dsn string and try to connect to the db.
@@ -86,7 +85,7 @@ func NewSqlite(authOpts map[string]string, logLevel log.Level, hasher hashing.Ha
 		connectTries, err := strconv.Atoi(tries)
 
 		if err != nil {
-			log.Warnf("invalid sqlite connect tries options: %s", err)
+			slog.Warn("invalid sqlite connect tries options", "error", err)
 		} else {
 			sqlite.connectTries = connectTries
 		}
@@ -96,7 +95,7 @@ func NewSqlite(authOpts map[string]string, logLevel log.Level, hasher hashing.Ha
 	sqlite.DB, err = OpenDatabase(connStr, "sqlite3", sqlite.connectTries, sqlite.maxLifeTime)
 
 	if err != nil {
-		return sqlite, errors.Errorf("sqlite backend error: couldn't open db %s: %s", connStr, err)
+		return sqlite, fmt.Errorf("sqlite backend error: couldn't open db %s: %s", connStr, err.Error())
 	}
 
 	return sqlite, nil
@@ -110,17 +109,17 @@ func (o Sqlite) GetUser(username, password, clientid string) (bool, error) {
 	err := o.DB.Get(&pwHash, o.UserQuery, username)
 
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			// avoid leaking the fact that user exists or not though error.
 			return false, nil
 		}
 
-		log.Debugf("SQlite get user error: %s", err)
+		slog.Debug("SQlite get user error", "error", err)
 		return false, err
 	}
 
 	if !pwHash.Valid {
-		log.Debugf("SQlite get user error: user %s not found.", username)
+		slog.Debug("SQlite get user error: user not found", "username", username)
 		return false, nil
 	}
 
@@ -144,17 +143,17 @@ func (o Sqlite) GetSuperuser(username string) (bool, error) {
 	err := o.DB.Get(&count, o.SuperuserQuery, username)
 
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			// avoid leaking the fact that user exists or not though error.
 			return false, nil
 		}
 
-		log.Debugf("sqlite get superuser error: %s", err)
+		slog.Debug("sqlite get superuser error", "error", err)
 		return false, err
 	}
 
 	if !count.Valid {
-		log.Debugf("sqlite get superuser error: user %s not found", username)
+		slog.Debug("sqlite get superuser error: user not found", "username", username)
 		return false, nil
 	}
 
@@ -178,7 +177,7 @@ func (o Sqlite) CheckAcl(username, topic, clientid string, acc int32) (bool, err
 	err := o.DB.Select(&acls, o.AclQuery, username, acc)
 
 	if err != nil {
-		log.Debugf("sqlite check acl error: %s", err)
+		slog.Debug("sqlite check acl error", "error", err)
 		return false, err
 	}
 
@@ -204,7 +203,7 @@ func (o Sqlite) Halt() {
 	if o.DB != nil {
 		err := o.DB.Close()
 		if err != nil {
-			log.Errorf("sqlite cleanup error: %s", err)
+			slog.Error("sqlite cleanup error", "error", err)
 		}
 	}
 }

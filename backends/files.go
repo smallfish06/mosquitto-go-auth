@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 	"github.com/smallfish06/mosquitto-go-auth/backends/files"
 	"github.com/smallfish06/mosquitto-go-auth/hashing"
 )
@@ -15,9 +14,7 @@ type Files struct {
 }
 
 // NewFiles initializes a files backend.
-func NewFiles(authOpts map[string]string, logLevel log.Level, hasher hashing.HashComparer) (*Files, error) {
-
-	log.SetLevel(logLevel)
+func NewFiles(authOpts map[string]string, hasher hashing.HashComparer) (*Files, error) {
 
 	/*
 		It is an error for the Files backend not to have a passwords file, but it is not for the underlying
@@ -33,7 +30,7 @@ func NewFiles(authOpts map[string]string, logLevel log.Level, hasher hashing.Has
 		return nil, errors.New("missing passwords file path")
 	}
 
-	var checker, err = files.NewChecker(authOpts["backends"], authOpts["files_password_path"], authOpts["files_acl_path"], logLevel, hasher)
+	var checker, err = files.NewChecker(authOpts["backends"], authOpts["files_password_path"], authOpts["files_acl_path"], hasher)
 	if err != nil {
 		return nil, err
 	}

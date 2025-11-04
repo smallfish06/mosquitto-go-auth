@@ -2,10 +2,10 @@ package backends
 
 import (
 	"database/sql"
+	"log/slog"
 	"strings"
 
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 	"github.com/smallfish06/mosquitto-go-auth/hashing"
 )
 
@@ -24,7 +24,7 @@ const (
 )
 
 // NewLocalJWTChecker initializes a checker with a local DB.
-func NewLocalJWTChecker(authOpts map[string]string, logLevel log.Level, hasher hashing.HashComparer, options tokenOptions) (jwtChecker, error) {
+func NewLocalJWTChecker(authOpts map[string]string, hasher hashing.HashComparer, options tokenOptions) (jwtChecker, error) {
 	checker := &localJWTChecker{
 		hasher:  hasher,
 		db:      postgresDB,
@@ -57,7 +57,7 @@ func NewLocalJWTChecker(authOpts map[string]string, logLevel log.Level, hasher h
 	dbAuthOpts := extractOpts(authOpts, checker.db)
 
 	if checker.db == mysqlDB {
-		mysql, err := NewMysql(dbAuthOpts, logLevel, hasher)
+		mysql, err := NewMysql(dbAuthOpts, hasher)
 		if err != nil {
 			return nil, errors.Errorf("JWT backend error: couldn't create mysql connector for local jwt: %s", err)
 		}
@@ -67,7 +67,7 @@ func NewLocalJWTChecker(authOpts map[string]string, logLevel log.Level, hasher h
 		return checker, nil
 	}
 
-	postgres, err := NewPostgres(dbAuthOpts, logLevel, hasher)
+	postgres, err := NewPostgres(dbAuthOpts, hasher)
 	if err != nil {
 		return nil, errors.Errorf("JWT backend error: couldn't create postgres connector for local jwt: %s", err)
 	}
@@ -81,7 +81,7 @@ func (o *localJWTChecker) GetUser(token string) (bool, error) {
 	username, err := getUsernameForToken(o.options, token, o.options.skipUserExpiration)
 
 	if err != nil {
-		log.Printf("jwt local get user error: %s", err)
+		slog.Error("jwt local get user error", "error", err)
 		return false, err
 	}
 
@@ -92,7 +92,7 @@ func (o *localJWTChecker) GetSuperuser(token string) (bool, error) {
 	username, err := getUsernameForToken(o.options, token, o.options.skipUserExpiration)
 
 	if err != nil {
-		log.Printf("jwt local get superuser error: %s", err)
+		slog.Error("jwt local get superuser error", "error", err)
 		return false, err
 	}
 
@@ -107,7 +107,7 @@ func (o *localJWTChecker) CheckAcl(token, topic, clientid string, acc int32) (bo
 	username, err := getUsernameForToken(o.options, token, o.options.skipACLExpiration)
 
 	if err != nil {
-		log.Printf("jwt local check acl error: %s", err)
+		slog.Error("jwt local check acl error", "error", err)
 		return false, err
 	}
 
@@ -122,12 +122,12 @@ func (o *localJWTChecker) Halt() {
 	if o.postgres != (Postgres{}) && o.postgres.DB != nil {
 		err := o.postgres.DB.Close()
 		if err != nil {
-			log.Errorf("JWT cleanup error: %s", err)
+			slog.Error("JWT cleanup error", "error", err)
 		}
 	} else if o.mysql != (Mysql{}) && o.mysql.DB != nil {
 		err := o.mysql.DB.Close()
 		if err != nil {
-			log.Errorf("JWT cleanup error: %s", err)
+			slog.Error("JWT cleanup error", "error", err)
 		}
 	}
 }
@@ -146,12 +146,12 @@ func (o *localJWTChecker) getLocalUser(username string) (bool, error) {
 	}
 
 	if err != nil {
-		log.Debugf("local JWT get user error: %s", err)
+		slog.Debug("local JWT get user error", "error", err)
 		return false, err
 	}
 
 	if !count.Valid {
-		log.Debugf("local JWT get user error: user %s not found", username)
+		slog.Debug("local JWT get user error: user not found", "username", username)
 		return false, nil
 	}
 

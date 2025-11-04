@@ -1,28 +1,28 @@
 package main
 
 import (
-	log "github.com/sirupsen/logrus"
+	"log/slog"
 )
 
-func Init(authOpts map[string]string, logLevel log.Level) error {
+func Init(authOpts map[string]string, logLevel slog.Level) error {
 	//Initialize your plugin with the necessary options
-	log.Infof("customPlugin initialized!")
-	log.Debugf("Received %d options.", len(authOpts))
+	slog.Info("customPlugin initialized!")
+	slog.Debug("Received options", "count", len(authOpts))
 	return nil
 }
 
 func GetUser(username, password, clientid string) (bool, error) {
-	log.Debugf("Checking get user with custom plugin.")
+	slog.Debug("Checking get user with custom plugin")
 	return false, nil
 }
 
 func GetSuperuser(username string) (bool, error) {
-	log.Debugf("Checking get superuser with custom plugin.")
+	slog.Debug("Checking get superuser with custom plugin")
 	return false, nil
 }
 
 func CheckAcl(username, topic, clientid string, acc int32) (bool, error) {
-	log.Debugf("Checking acl with custom plugin.")
+	slog.Debug("Checking acl with custom plugin")
 	return false, nil
 }
 

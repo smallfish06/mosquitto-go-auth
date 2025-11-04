@@ -4,15 +4,16 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"database/sql"
+	"errors"
 	"fmt"
-	"io/ioutil"
+	"log/slog"
+	"os"
 	"strconv"
 	"strings"
 
 	mq "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
-	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
+
 	"github.com/smallfish06/mosquitto-go-auth/backends/topics"
 	"github.com/smallfish06/mosquitto-go-auth/hashing"
 )
@@ -41,9 +42,7 @@ type Mysql struct {
 	connectTries int
 }
 
-func NewMysql(authOpts map[string]string, logLevel log.Level, hasher hashing.HashComparer) (Mysql, error) {
-
-	log.SetLevel(logLevel)
+func NewMysql(authOpts map[string]string, hasher hashing.HashComparer) (Mysql, error) {
 
 	// Set defaults for Mysql
 
@@ -140,7 +139,7 @@ func NewMysql(authOpts map[string]string, logLevel log.Level, hasher hashing.Has
 		mysql.SSLRootCert = sslRootCert
 	} else {
 		if customSSL {
-			log.Warn("MySQL backend warning: TLS was disabled due to missing root certificate (mysql_sslrootcert)")
+			slog.Warn("MySQL backend warning: TLS was disabled due to missing root certificate (mysql_sslrootcert)")
 			customSSL = false
 		}
 	}
@@ -158,7 +157,7 @@ func NewMysql(authOpts map[string]string, logLevel log.Level, hasher hashing.Has
 
 	// Exit if any mandatory option is missing.
 	if !mysqlOk {
-		return mysql, errors.Errorf("MySql backend error: missing options: %s", missingOptions)
+		return mysql, fmt.Errorf("MySql backend error: missing options: %s", missingOptions)
 	}
 
 	var msConfig = mq.Config{
@@ -174,12 +173,12 @@ func NewMysql(authOpts map[string]string, logLevel log.Level, hasher hashing.Has
 	if customSSL {
 
 		rootCertPool := x509.NewCertPool()
-		pem, err := ioutil.ReadFile(mysql.SSLRootCert)
+		pem, err := os.ReadFile(mysql.SSLRootCert)
 		if err != nil {
-			return mysql, errors.Errorf("Mysql read root CA error: %s", err)
+			return mysql, fmt.Errorf("mysql read root CA error: %s", err.Error())
 		}
 		if ok := rootCertPool.AppendCertsFromPEM(pem); !ok {
-			return mysql, errors.Errorf("Mysql failed to append root CA pem error: %s", err)
+			return mysql, errors.New("mysql failed to append root CA pem error")
 		}
 
 		tlsConfig := &tls.Config{
@@ -191,18 +190,18 @@ func NewMysql(authOpts map[string]string, logLevel log.Level, hasher hashing.Has
 				clientCert := make([]tls.Certificate, 0, 1)
 				certs, err := tls.LoadX509KeyPair(mysql.SSLCert, mysql.SSLKey)
 				if err != nil {
-					return mysql, errors.Errorf("Mysql load key and cert error: %s", err)
+					return mysql, fmt.Errorf("mysql load key and cert error: %s", err.Error())
 				}
 				clientCert = append(clientCert, certs)
 				tlsConfig.Certificates = clientCert
 			} else {
-				log.Warn("MySQL backend warning: mutual TLS was disabled due to missing client certificate (mysql_sslcert) or client key (mysql_sslkey)")
+				slog.Warn("MySQL backend warning: mutual TLS was disabled due to missing client certificate (mysql_sslcert) or client key (mysql_sslkey)")
 			}
 		}
 
 		err = mq.RegisterTLSConfig("custom", tlsConfig)
 		if err != nil {
-			return mysql, errors.Errorf("Mysql register TLS config error: %s", err)
+			return mysql, fmt.Errorf("mysql register TLS config error: %s", err.Error())
 		}
 	}
 
@@ -210,7 +209,7 @@ func NewMysql(authOpts map[string]string, logLevel log.Level, hasher hashing.Has
 		connectTries, err := strconv.Atoi(tries)
 
 		if err != nil {
-			log.Warnf("invalid mysql connect tries options: %s", err)
+			slog.Warn("invalid mysql connect tries options", "error", err)
 		} else {
 			mysql.connectTries = connectTries
 		}
@@ -228,7 +227,7 @@ func NewMysql(authOpts map[string]string, logLevel log.Level, hasher hashing.Has
 	mysql.DB, err = OpenDatabase(msConfig.FormatDSN(), "mysql", mysql.connectTries, mysql.maxLifeTime)
 
 	if err != nil {
-		return mysql, errors.Errorf("MySql backend error: couldn't open db: %s", err)
+		return mysql, fmt.Errorf("MySql backend error: couldn't open db: %s", err)
 	}
 
 	return mysql, nil
@@ -242,17 +241,17 @@ func (o Mysql) GetUser(username, password, clientid string) (bool, error) {
 	err := o.DB.Get(&pwHash, o.UserQuery, username)
 
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			// avoid leaking the fact that user exists or not though error.
 			return false, nil
 		}
 
-		log.Debugf("MySql get user error: %s", err)
+		slog.Debug("MySql get user error", "error", err)
 		return false, err
 	}
 
 	if !pwHash.Valid {
-		log.Debugf("MySql get user error: user %s not found", username)
+		slog.Debug("MySql get user error: user not found", "username", username)
 		return false, nil
 	}
 
@@ -276,17 +275,17 @@ func (o Mysql) GetSuperuser(username string) (bool, error) {
 	err := o.DB.Get(&count, o.SuperuserQuery, username)
 
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			// avoid leaking the fact that user exists or not though error.
 			return false, nil
 		}
 
-		log.Debugf("MySql get superuser error: %s", err)
+		slog.Debug("MySql get superuser error", "error", err)
 		return false, err
 	}
 
 	if !count.Valid {
-		log.Debugf("MySql get superuser error: user %s not found", username)
+		slog.Debug("MySql get superuser error: user not found", "username", username)
 		return false, nil
 	}
 
@@ -310,7 +309,7 @@ func (o Mysql) CheckAcl(username, topic, clientid string, acc int32) (bool, erro
 	err := o.DB.Select(&acls, o.AclQuery, username, acc)
 
 	if err != nil {
-		log.Debugf("MySql check acl error: %s", err)
+		slog.Debug("MySql check acl error", "error", err)
 		return false, err
 	}
 
@@ -336,7 +335,7 @@ func (o Mysql) Halt() {
 	if o.DB != nil {
 		err := o.DB.Close()
 		if err != nil {
-			log.Errorf("Mysql cleanup error: %s", err)
+			slog.Error("Mysql cleanup error", "error", err)
 		}
 	}
 }

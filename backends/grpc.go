@@ -6,17 +6,16 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io/ioutil"
+	"log/slog"
 	"strconv"
 	"time"
 
-	"google.golang.org/grpc/credentials/insecure"
-
-	grpc_logrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
+	grpcLogging "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 	gs "github.com/smallfish06/mosquitto-go-auth/grpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -34,7 +33,7 @@ type GRPC struct {
 const defaultGRPCTimeoutMs = 500
 
 // NewGRPC tries to connect to the gRPC service at the given host.
-func NewGRPC(authOpts map[string]string, logLevel log.Level) (*GRPC, error) {
+func NewGRPC(authOpts map[string]string) (*GRPC, error) {
 	g := &GRPC{
 		timeout: defaultGRPCTimeoutMs,
 	}
@@ -51,7 +50,7 @@ func NewGRPC(authOpts map[string]string, logLevel log.Level) (*GRPC, error) {
 		timeoutMs, err := strconv.Atoi(timeout)
 
 		if err != nil {
-			log.Warnf("invalid grpc dial timeout value: %s", err)
+			slog.Warn("invalid grpc dial timeout value", "error", err)
 		} else {
 			g.timeout = timeoutMs
 		}
@@ -90,7 +89,7 @@ func (o *GRPC) GetUser(username, password, clientid string) (bool, error) {
 	resp, err := o.client.GetUser(context.Background(), &req)
 
 	if err != nil {
-		log.Errorf("grpc get user error: %s", err)
+		slog.Error("grpc get user error", "error", err)
 		return false, err
 	}
 
@@ -111,7 +110,7 @@ func (o *GRPC) GetSuperuser(username string) (bool, error) {
 	resp, err := o.client.GetSuperuser(context.Background(), &req)
 
 	if err != nil {
-		log.Errorf("grpc get superuser error: %s", err)
+		slog.Error("grpc get superuser error", "error", err)
 		return false, err
 	}
 
@@ -131,7 +130,7 @@ func (o *GRPC) CheckAcl(username, topic, clientid string, acc int32) (bool, erro
 	resp, err := o.client.CheckAcl(context.Background(), &req)
 
 	if err != nil {
-		log.Errorf("grpc check acl error: %s", err)
+		slog.Error("grpc check acl error", "error", err)
 		return false, err
 	}
 
@@ -158,7 +157,7 @@ func (o *GRPC) GetName() string {
 func (o *GRPC) Halt() {
 	_, err := o.client.Halt(context.Background(), &emptypb.Empty{})
 	if err != nil {
-		log.Errorf("grpc halt: %s", err)
+		slog.Error("grpc halt", "error", err)
 	}
 
 	if o.conn != nil {
@@ -166,15 +165,35 @@ func (o *GRPC) Halt() {
 	}
 }
 
+// interceptorLogger adapts slog logger to grpc logging interface
+func interceptorLogger(l *slog.Logger) grpcLogging.Logger {
+	return grpcLogging.LoggerFunc(func(ctx context.Context, lvl grpcLogging.Level, msg string, fields ...any) {
+		var slogLevel slog.Level
+		switch lvl {
+		case grpcLogging.LevelDebug:
+			slogLevel = slog.LevelDebug
+		case grpcLogging.LevelInfo:
+			slogLevel = slog.LevelInfo
+		case grpcLogging.LevelWarn:
+			slogLevel = slog.LevelWarn
+		case grpcLogging.LevelError:
+			slogLevel = slog.LevelError
+		default:
+			panic(fmt.Sprintf("unknown level %v", lvl))
+		}
+		l.Log(ctx, slogLevel, msg, fields...)
+	})
+}
+
 func setup(hostname string, caCert string, tlsCert string, tlsKey string, withBlock bool) ([]grpc.DialOption, error) {
-	logrusEntry := log.NewEntry(log.StandardLogger())
-	logrusOpts := []grpc_logrus.Option{
-		grpc_logrus.WithLevels(grpc_logrus.DefaultCodeToLevel),
+	logger := slog.Default()
+	loggerOpts := []grpcLogging.Option{
+		grpcLogging.WithLogOnEvents(grpcLogging.StartCall, grpcLogging.FinishCall),
 	}
 
 	nsOpts := []grpc.DialOption{
-		grpc.WithUnaryInterceptor(
-			grpc_logrus.UnaryClientInterceptor(logrusEntry, logrusOpts...),
+		grpc.WithChainUnaryInterceptor(
+			grpcLogging.UnaryClientInterceptor(interceptorLogger(logger), loggerOpts...),
 		),
 	}
 
@@ -184,9 +203,9 @@ func setup(hostname string, caCert string, tlsCert string, tlsKey string, withBl
 
 	if len(caCert) == 0 {
 		nsOpts = append(nsOpts, grpc.WithTransportCredentials(insecure.NewCredentials()))
-		log.WithField("server", hostname).Warning("creating insecure grpc client")
+		slog.Warn("creating insecure grpc client", "server", hostname)
 	} else {
-		log.WithField("server", hostname).Info("creating grpc client")
+		slog.Info("creating grpc client", "server", hostname)
 
 		caCertBytes, err := ioutil.ReadFile(caCert)
 		if err != nil {
@@ -208,7 +227,7 @@ func setup(hostname string, caCert string, tlsCert string, tlsKey string, withBl
 			certificates := []tls.Certificate{cert}
 			tlsConfig.Certificates = certificates
 		} else if len(tlsCert) != 0 || len(tlsKey) != 0 {
-			log.Warn("gRPC backend warning: mutual TLS was disabled due to missing client certificate (grpc_tls_cert) or client key (grpc_tls_key)")
+			slog.Warn("gRPC backend warning: mutual TLS was disabled due to missing client certificate (grpc_tls_cert) or client key (grpc_tls_key)")
 		}
 
 		nsOpts = append(nsOpts, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))

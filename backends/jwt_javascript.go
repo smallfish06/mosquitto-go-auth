@@ -1,10 +1,10 @@
 package backends
 
 import (
+	"log/slog"
 	"strconv"
 
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 	"github.com/smallfish06/mosquitto-go-auth/backends/js"
 )
 
@@ -33,7 +33,7 @@ func NewJsJWTChecker(authOpts map[string]string, options tokenOptions) (jwtCheck
 	if stackLimit, ok := authOpts["jwt_js_stack_depth_limit"]; ok {
 		limit, err := strconv.ParseInt(stackLimit, 10, 64)
 		if err != nil {
-			log.Errorf("invalid stack depth limit %s, defaulting to %d", stackLimit, js.DefaultStackDepthLimit)
+			slog.Error("invalid stack depth limit, using default", "value", stackLimit, "default", js.DefaultStackDepthLimit)
 		} else {
 			checker.stackDepthLimit = int(limit)
 		}
@@ -42,7 +42,7 @@ func NewJsJWTChecker(authOpts map[string]string, options tokenOptions) (jwtCheck
 	if maxDuration, ok := authOpts["jwt_js_ms_max_duration"]; ok {
 		duration, err := strconv.ParseInt(maxDuration, 10, 64)
 		if err != nil {
-			log.Errorf("invalid stack depth limit %s, defaulting to %d", maxDuration, js.DefaultMsMaxDuration)
+			slog.Error("invalid max duration, using default", "value", maxDuration, "default", js.DefaultMsMaxDuration)
 		} else {
 			checker.msMaxDuration = duration
 		}
@@ -104,7 +104,7 @@ func (o *jsJWTChecker) GetUser(token string) (bool, error) {
 
 	granted, err := o.runner.RunScript(o.userScript, params)
 	if err != nil {
-		log.Errorf("js error: %s", err)
+		slog.Error("js error", "error", err)
 	}
 
 	return granted, err
@@ -114,7 +114,7 @@ func (o *jsJWTChecker) addDataFromJWT(params map[string]interface{}, token strin
 	claims, err := getClaimsForToken(o.options, token, skipExpiration)
 
 	if err != nil {
-		log.Printf("jwt get claims error: %s", err)
+		slog.Error("jwt get claims error", "error", err)
 		return nil, err
 	}
 
@@ -145,7 +145,7 @@ func (o *jsJWTChecker) GetSuperuser(token string) (bool, error) {
 
 	granted, err := o.runner.RunScript(o.superuserScript, params)
 	if err != nil {
-		log.Errorf("js error: %s", err)
+		slog.Error("js error", "error", err)
 	}
 
 	return granted, err
@@ -168,7 +168,7 @@ func (o *jsJWTChecker) CheckAcl(token, topic, clientid string, acc int32) (bool,
 
 	granted, err := o.runner.RunScript(o.aclScript, params)
 	if err != nil {
-		log.Errorf("js error: %s", err)
+		slog.Error("js error", "error", err)
 	}
 
 	return granted, err

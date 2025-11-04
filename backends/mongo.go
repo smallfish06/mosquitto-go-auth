@@ -3,12 +3,12 @@ package backends
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
-	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 	. "github.com/smallfish06/mosquitto-go-auth/backends/constants"
 	"github.com/smallfish06/mosquitto-go-auth/backends/topics"
 	"github.com/smallfish06/mosquitto-go-auth/hashing"
@@ -46,9 +46,7 @@ type MongoUser struct {
 	Acls         []MongoAcl `bson:"acls"`
 }
 
-func NewMongo(authOpts map[string]string, logLevel log.Level, hasher hashing.HashComparer) (Mongo, error) {
-
-	log.SetLevel(logLevel)
+func NewMongo(authOpts map[string]string, hasher hashing.HashComparer) (Mongo, error) {
 
 	var m = Mongo{
 		Host:               "localhost",
@@ -132,13 +130,13 @@ func NewMongo(authOpts map[string]string, logLevel log.Level, hasher hashing.Has
 		// Set custom AuthSource db if supplied in config
 		if m.AuthSource != "" {
 			opts.Auth.AuthSource = m.AuthSource
-			log.Infof("mongo backend: set authentication db to: %s", m.AuthSource)
+			slog.Info("mongo backend: set authentication db", "db", m.AuthSource)
 		}
 	}
 
 	client, err := mongo.Connect(context.TODO(), &opts)
 	if err != nil {
-		return m, errors.Errorf("couldn't start mongo backend: %s", err)
+		return m, fmt.Errorf("couldn't start mongo backend: %s", err.Error())
 	}
 
 	m.Conn = client
@@ -156,12 +154,12 @@ func (o Mongo) GetUser(username, password, clientid string) (bool, error) {
 
 	err := uc.FindOne(context.TODO(), bson.M{"username": username}).Decode(&user)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			// avoid leaking the fact that user exists or not though error.
 			return false, nil
 		}
 
-		log.Debugf("Mongo get user error: %s", err)
+		slog.Debug("Mongo get user error", "error", err)
 		return false, err
 	}
 
@@ -186,12 +184,12 @@ func (o Mongo) GetSuperuser(username string) (bool, error) {
 
 	err := uc.FindOne(context.TODO(), bson.M{"username": username}).Decode(&user)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			// avoid leaking the fact that user exists or not though error.
 			return false, nil
 		}
 
-		log.Debugf("Mongo get superuser error: %s", err)
+		slog.Debug("Mongo get superuser error", "error", err)
 		return false, err
 	}
 
@@ -209,12 +207,12 @@ func (o Mongo) CheckAcl(username, topic, clientid string, acc int32) (bool, erro
 
 	err := uc.FindOne(context.TODO(), bson.M{"username": username}).Decode(&user)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			// avoid leaking the fact that user exists or not though error.
 			return false, nil
 		}
 
-		log.Debugf("Mongo get superuser error: %s", err)
+		slog.Debug("Mongo get superuser error", "error", err)
 		return false, err
 	}
 
@@ -231,7 +229,7 @@ func (o Mongo) CheckAcl(username, topic, clientid string, acc int32) (bool, erro
 	cur, err := ac.Find(context.TODO(), bson.M{"acc": bson.M{"$in": []int32{acc, 3}}})
 
 	if err != nil {
-		log.Debugf("Mongo check acl error: %s", err)
+		slog.Debug("Mongo check acl error", "error", err)
 		return false, err
 	}
 
@@ -247,7 +245,7 @@ func (o Mongo) CheckAcl(username, topic, clientid string, acc int32) (bool, erro
 				return true, nil
 			}
 		} else {
-			log.Errorf("mongo cursor decode error: %s", err)
+			slog.Error("mongo cursor decode error", "error", err)
 		}
 	}
 
@@ -265,7 +263,7 @@ func (o Mongo) Halt() {
 	if o.Conn != nil {
 		err := o.Conn.Disconnect(context.TODO())
 		if err != nil {
-			log.Errorf("mongo halt: %s", err)
+			slog.Error("mongo halt", "error", err)
 		}
 	}
 }

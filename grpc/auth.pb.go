@@ -318,7 +318,7 @@ const file_auth_proto_rawDesc = "" +
 	"\fGetSuperuser\x12\x19.grpc.GetSuperuserRequest\x1a\x12.grpc.AuthResponse\"\x00\x127\n" +
 	"\bCheckAcl\x12\x15.grpc.CheckAclRequest\x1a\x12.grpc.AuthResponse\"\x00\x127\n" +
 	"\aGetName\x12\x16.google.protobuf.Empty\x1a\x12.grpc.NameResponse\"\x00\x128\n" +
-	"\x04Halt\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.Empty\"\x00B+Z)github.com/smallfish06/mosquitto-go-auth/grpcb\x06proto3"
+	"\x04Halt\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.Empty\"\x00B/Z-github.com/smallfish06/mosquitto-go-auth/grpcb\x06proto3"
 
 var (
 	file_auth_proto_rawDescOnce sync.Once

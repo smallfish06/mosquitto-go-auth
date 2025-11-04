@@ -4,12 +4,13 @@ import "C"
 
 import (
 	"context"
+	"io"
+	"log/slog"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	bes "github.com/smallfish06/mosquitto-go-auth/backends"
 	"github.com/smallfish06/mosquitto-go-auth/cache"
 	"github.com/smallfish06/mosquitto-go-auth/hashing"
@@ -18,7 +19,7 @@ import (
 type AuthPlugin struct {
 	backends              *bes.Backends
 	useCache              bool
-	logLevel              log.Level
+	logLevel              slog.Level
 	logDest               string
 	logFile               string
 	ctx                   context.Context
@@ -40,13 +41,9 @@ var authPlugin AuthPlugin      // General struct with options and conf.
 
 //export AuthPluginInit
 func AuthPluginInit(keys []*C.char, values []*C.char, authOptsNum int, version *C.char) {
-	log.SetFormatter(&log.TextFormatter{
-		FullTimestamp: true,
-	})
-
 	// Initialize auth plugin struct with default and given values.
 	authPlugin = AuthPlugin{
-		logLevel: log.InfoLevel,
+		logLevel: slog.LevelInfo,
 		ctx:      context.Background(),
 	}
 
@@ -60,12 +57,12 @@ func AuthPluginInit(keys []*C.char, values []*C.char, authOptsNum int, version *
 		if err == nil {
 			authPlugin.retryCount = int(retry)
 		} else {
-			log.Warningf("couldn't parse retryCount (err: %s), defaulting to 0", err)
+			slog.Warn("couldn't parse retryCount, defaulting to 0", "error", err)
 		}
 	}
 
 	if useClientidAsUsername, ok := authOpts["use_clientid_as_username"]; ok && strings.Replace(useClientidAsUsername, " ", "", -1) == "true" {
-		log.Info("clientid will be used as username on checks")
+		slog.Info("clientid will be used as username on checks")
 		authPlugin.useClientidAsUsername = true
 	} else {
 		authPlugin.useClientidAsUsername = false
@@ -76,52 +73,56 @@ func AuthPluginInit(keys []*C.char, values []*C.char, authOptsNum int, version *
 		logLevel = strings.Replace(logLevel, " ", "", -1)
 		switch logLevel {
 		case "debug":
-			authPlugin.logLevel = log.DebugLevel
+			authPlugin.logLevel = slog.LevelDebug
 		case "info":
-			authPlugin.logLevel = log.InfoLevel
+			authPlugin.logLevel = slog.LevelInfo
 		case "warn":
-			authPlugin.logLevel = log.WarnLevel
+			authPlugin.logLevel = slog.LevelWarn
 		case "error":
-			authPlugin.logLevel = log.ErrorLevel
-		case "fatal":
-			authPlugin.logLevel = log.FatalLevel
-		case "panic":
-			authPlugin.logLevel = log.PanicLevel
+			authPlugin.logLevel = slog.LevelError
 		default:
-			log.Info("log_level unkwown, using default info level")
+			slog.Info("log_level unkwown, using default info level")
 		}
 	}
 
+	var logWriter io.Writer = os.Stderr
 	if logDest, ok := authOpts["log_dest"]; ok {
 		switch logDest {
 		case "stdout":
-			log.SetOutput(os.Stdout)
+			logWriter = os.Stdout
 		case "file":
 			if logFile, ok := authOpts["log_file"]; ok {
 				file, err := os.OpenFile(logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 				if err == nil {
-					log.SetOutput(file)
+					logWriter = file
 				} else {
-					log.Errorf("failed to log to file, using default stderr: %s", err)
+					slog.Error("failed to log to file, using default stderr", "error", err)
 				}
 			}
 		default:
-			log.Info("log_dest unknown, using default stderr")
+			slog.Info("log_dest unknown, using default stderr")
 		}
 	}
 
+	// Set up slog with the configured output and level
+	handler := slog.NewTextHandler(logWriter, &slog.HandlerOptions{
+		Level: authPlugin.logLevel,
+	})
+	slog.SetDefault(slog.New(handler))
+
 	var err error
 
-	authPlugin.backends, err = bes.Initialize(authOpts, authPlugin.logLevel, C.GoString(version))
+	authPlugin.backends, err = bes.Initialize(authOpts, C.GoString(version))
 	if err != nil {
-		log.Fatalf("error initializing backends: %s", err)
+		slog.Error("error initializing backends", "error", err)
+		os.Exit(1)
 	}
 
 	if cache, ok := authOpts["cache"]; ok && strings.Replace(cache, " ", "", -1) == "true" {
-		log.Info("redisCache activated")
+		slog.Info("redisCache activated")
 		authPlugin.useCache = true
 	} else {
-		log.Info("No cache set.")
+		slog.Info("No cache set.")
 		authPlugin.useCache = false
 	}
 
@@ -142,7 +143,7 @@ func setCache(authOpts map[string]string) {
 		if err == nil {
 			authCacheSeconds = authSec
 		} else {
-			log.Warningf("couldn't parse authCacheSeconds (err: %s), defaulting to %d", err, authCacheSeconds)
+			slog.Warn("couldn't parse authCacheSeconds, using default", "error", err, "default", authCacheSeconds)
 		}
 	}
 
@@ -151,13 +152,13 @@ func setCache(authOpts map[string]string) {
 		if err == nil {
 			authJitterSeconds = authSec
 		} else {
-			log.Warningf("couldn't parse authJitterSeconds (err: %s), defaulting to %d", err, authJitterSeconds)
+			slog.Warn("couldn't parse authJitterSeconds, using default", "error", err, "default", authJitterSeconds)
 		}
 	}
 
 	if authJitterSeconds > authCacheSeconds {
 		authJitterSeconds = authCacheSeconds
-		log.Warningf("authJitterSeconds is larger than authCacheSeconds, defaulting to %d", authJitterSeconds)
+		slog.Warn("authJitterSeconds is larger than authCacheSeconds, using default", "value", authJitterSeconds)
 	}
 
 	if aclCacheSec, ok := authOpts["acl_cache_seconds"]; ok {
@@ -165,7 +166,7 @@ func setCache(authOpts map[string]string) {
 		if err == nil {
 			aclCacheSeconds = aclSec
 		} else {
-			log.Warningf("couldn't parse aclCacheSeconds (err: %s), defaulting to %d", err, aclCacheSeconds)
+			slog.Warn("couldn't parse aclCacheSeconds, using default", "error", err, "default", aclCacheSeconds)
 		}
 	}
 
@@ -174,13 +175,13 @@ func setCache(authOpts map[string]string) {
 		if err == nil {
 			aclJitterSeconds = aclSec
 		} else {
-			log.Warningf("couldn't parse aclJitterSeconds (err: %s), defaulting to %d", err, aclJitterSeconds)
+			slog.Warn("couldn't parse aclJitterSeconds, using default", "error", err, "default", aclJitterSeconds)
 		}
 	}
 
 	if aclJitterSeconds > aclCacheSeconds {
 		aclJitterSeconds = aclCacheSeconds
-		log.Warningf("aclJitterSeconds is larger than aclCacheSeconds, defaulting to %d", aclJitterSeconds)
+		slog.Warn("aclJitterSeconds is larger than aclCacheSeconds, using default", "value", aclJitterSeconds)
 	}
 
 	reset := false
@@ -213,7 +214,7 @@ func setCache(authOpts map[string]string) {
 
 			addressesOpt := authOpts["redis_cluster_addresses"]
 			if addressesOpt == "" {
-				log.Errorln("cache Redis cluster addresses missing, defaulting to no cache.")
+				slog.Error("cache Redis cluster addresses missing, defaulting to no cache.")
 				authPlugin.useCache = false
 				return
 			}
@@ -248,7 +249,7 @@ func setCache(authOpts map[string]string) {
 				if err == nil {
 					db = int(parsedDB)
 				} else {
-					log.Warningf("couldn't parse cache db (err: %s), defaulting to %d", err, db)
+					slog.Warn("couldn't parse cache db, using default", "error", err, "default", db)
 				}
 			}
 
@@ -278,7 +279,7 @@ func setCache(authOpts map[string]string) {
 	if !authPlugin.cache.Connect(authPlugin.ctx, reset) {
 		authPlugin.cache = nil
 		authPlugin.useCache = false
-		log.Infoln("couldn't start cache, defaulting to no cache")
+		slog.Info("couldn't start cache, defaulting to no cache")
 	}
 
 }
@@ -296,7 +297,7 @@ func AuthUnpwdCheck(username, password, clientid *C.char) uint8 {
 	}
 
 	if err != nil {
-		log.Error(err)
+		slog.Error("authentication error", "error", err)
 		return AuthError
 	}
 
@@ -316,10 +317,10 @@ func authUnpwdCheck(username, password, clientid string) (bool, error) {
 	username = setUsername(username, clientid)
 
 	if authPlugin.useCache {
-		log.Debugf("checking auth cache for %s", username)
+		slog.Debug("checking auth cache", "username", username)
 		cached, granted = authPlugin.cache.CheckAuthRecord(authPlugin.ctx, username, password)
 		if cached {
-			log.Debugf("found in cache: %s", username)
+			slog.Debug("found in cache", "username", username)
 			return granted, nil
 		}
 	}
@@ -331,9 +332,9 @@ func authUnpwdCheck(username, password, clientid string) (bool, error) {
 		if authenticated {
 			authGranted = "true"
 		}
-		log.Debugf("setting auth cache for %s", username)
+		slog.Debug("setting auth cache", "username", username)
 		if setAuthErr := authPlugin.cache.SetAuthRecord(authPlugin.ctx, username, password, authGranted); setAuthErr != nil {
-			log.Errorf("set auth cache: %s", setAuthErr)
+			slog.Error("set auth cache", "error", setAuthErr)
 			return false, setAuthErr
 		}
 	}
@@ -353,7 +354,7 @@ func AuthAclCheck(clientid, username, topic *C.char, acc C.int) uint8 {
 	}
 
 	if err != nil {
-		log.Error(err)
+		slog.Error("acl check error", "error", err)
 		return AuthError
 	}
 
@@ -373,10 +374,10 @@ func authAclCheck(clientid, username, topic string, acc int) (bool, error) {
 	username = setUsername(username, clientid)
 
 	if authPlugin.useCache {
-		log.Debugf("checking acl cache for %s", username)
+		slog.Debug("checking acl cache", "username", username)
 		cached, granted = authPlugin.cache.CheckACLRecord(authPlugin.ctx, username, topic, clientid, acc)
 		if cached {
-			log.Debugf("found in cache: %s", username)
+			slog.Debug("found in cache", "username", username)
 			return granted, nil
 		}
 	}
@@ -388,14 +389,14 @@ func authAclCheck(clientid, username, topic string, acc int) (bool, error) {
 		if aclCheck {
 			authGranted = "true"
 		}
-		log.Debugf("setting acl cache (granted = %s) for %s", authGranted, username)
+		slog.Debug("setting acl cache", "granted", authGranted, "username", username)
 		if setACLErr := authPlugin.cache.SetACLRecord(authPlugin.ctx, username, topic, clientid, acc, authGranted); setACLErr != nil {
-			log.Errorf("set acl cache: %s", setACLErr)
+			slog.Error("set acl cache", "error", setACLErr)
 			return false, setACLErr
 		}
 	}
 
-	log.Debugf("Acl is %t for user %s", aclCheck, username)
+	slog.Debug("acl check result", "granted", aclCheck, "username", username)
 	return aclCheck, err
 }
 
@@ -406,7 +407,7 @@ func AuthPskKeyGet() bool {
 
 //export AuthPluginCleanup
 func AuthPluginCleanup() {
-	log.Info("Cleaning up plugin")
+	slog.Info("Cleaning up plugin")
 	// If cache is set, close cache connection.
 	if authPlugin.cache != nil {
 		authPlugin.cache.Close()

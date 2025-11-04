@@ -2,10 +2,9 @@ package hashing
 
 import (
 	"fmt"
+	"log/slog"
 	"strconv"
 	"strings"
-
-	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -61,9 +60,9 @@ func preferredEncoding(saltEncoding string) string {
 
 // Empty backend: use whatever plugin wise hashing options are present by returning whole opts.
 // Backend present: check if there's a backend_hasher option:
-// 	- Yes: return a new map with whatever hashing options are present for the given backend and hasher
-//		   (defaults will be used for missing options).
-//	- No: use whatever plugin wise hashing options are present by returning whole opts.
+//   - Yes: return a new map with whatever hashing options are present for the given backend and hasher
+//     (defaults will be used for missing options).
+//   - No: use whatever plugin wise hashing options are present by returning whole opts.
 func processHashOpts(authOpts map[string]string, backend string) map[string]string {
 
 	// Return authOpts if no backend given.
@@ -90,14 +89,14 @@ func NewHasher(authOpts map[string]string, backend string) HashComparer {
 
 	switch opts["hasher"] {
 	case BcryptOpt:
-		log.Debugf("new hasher: %s", BcryptOpt)
+		slog.Debug("new hasher", "type", BcryptOpt)
 		cost, err := strconv.ParseInt(opts["hasher_cost"], 10, 64)
 		if err != nil {
 			return NewBcryptHashComparer(defaultBcryptCost)
 		}
 		return NewBcryptHashComparer(int(cost))
 	case Argon2IDOpt:
-		log.Debugf("new hasher: %s", Argon2IDOpt)
+		slog.Debug("new hasher", "type", Argon2IDOpt)
 		saltSize := defaultArgon2IDSaltSize
 		if v, err := strconv.ParseInt(opts["hasher_salt_size"], 10, 64); err == nil {
 			saltSize = int(v)
@@ -120,9 +119,9 @@ func NewHasher(authOpts map[string]string, backend string) HashComparer {
 		}
 		return NewArgon2IDHasher(saltSize, iterations, keyLen, memory, parallelism)
 	case Pbkdf2Opt:
-		log.Debugf("new hasher: %s", Pbkdf2Opt)
+		slog.Debug("new hasher", "type", Pbkdf2Opt)
 	default:
-		log.Warnln("unknown or empty hasher, defaulting to PBKDF2")
+		slog.Warn("unknown or empty hasher, defaulting to PBKDF2")
 	}
 
 	saltSize := defaultPBKDF2SaltSize
@@ -145,6 +144,4 @@ func NewHasher(authOpts map[string]string, backend string) HashComparer {
 
 	saltEncoding := opts["hasher_salt_encoding"]
 	return NewPBKDF2Hasher(saltSize, iterations, algorithm, saltEncoding, keyLen)
-
-	return nil
 }

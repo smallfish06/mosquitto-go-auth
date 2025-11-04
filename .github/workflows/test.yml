@@ -78,32 +78,60 @@ jobs:
           
           echo "✅ Plugin loading test completed for Mosquitto ${{ matrix.mosquitto_version }}"
 
+  integration-test:
+    name: Integration Test - Mosquitto ${{ matrix.mosquitto_version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        mosquitto_version:
+          - '1.6.15'
+          - '2.0.18'
+          - '2.0.22'
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Set Mosquitto version in Dockerfile.runtest
+        run: sed -i 's/ARG MOSQUITTO_VERSION=1.6.14/ARG MOSQUITTO_VERSION=${{ matrix.mosquitto_version }}/' Dockerfile.runtest
+
+      - name: Build test image
+        run: docker build -t mosquitto-go-auth.test -f Dockerfile.runtest .
+
+      - name: Run integration tests
+        run: docker run --rm mosquitto-go-auth.test ./run-test-in-docker.sh
+
   test-summary:
     name: Test Summary
     runs-on: ubuntu-latest
-    needs: test-versions
+    needs: [test-versions, integration-test]
     if: always()
     
     steps:
       - name: Create summary
         run: |
-          echo "## Mosquitto Version Compatibility Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "## Test Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Status: ${{ needs.test-versions.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Tested Versions:" >> $GITHUB_STEP_SUMMARY
-          echo "- Mosquitto 2.0.18" >> $GITHUB_STEP_SUMMARY
-          echo "- Mosquitto 2.0.22" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Tested Platforms:" >> $GITHUB_STEP_SUMMARY
-          echo "- linux/amd64" >> $GITHUB_STEP_SUMMARY
-          echo "- linux/arm64" >> $GITHUB_STEP_SUMMARY
           
-          if [ "${{ needs.test-versions.result }}" != "success" ]; then
-            echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Compatibility Tests" >> $GITHUB_STEP_SUMMARY
+          echo "Status: ${{ needs.test-versions.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Mosquitto 2.0.18, 2.0.22" >> $GITHUB_STEP_SUMMARY
+          echo "- Platforms: linux/amd64, linux/arm64" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          echo "### Integration Tests" >> $GITHUB_STEP_SUMMARY
+          echo "Status: ${{ needs.integration-test.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Mosquitto 1.6.15 (1.x), 2.0.18 (2.x)" >> $GITHUB_STEP_SUMMARY
+          echo "- Full test suite with all backends" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ needs.test-versions.result }}" != "success" ] || [ "${{ needs.integration-test.result }}" != "success" ]; then
             echo "❌ Some tests failed. Check the logs above." >> $GITHUB_STEP_SUMMARY
             exit 1
           fi
           
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ All version compatibility tests passed!" >> $GITHUB_STEP_SUMMARY
+          echo "✅ All tests passed!" >> $GITHUB_STEP_SUMMARY

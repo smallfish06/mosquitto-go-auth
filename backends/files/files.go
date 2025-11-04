@@ -3,6 +3,7 @@ package files
 import (
 	"bufio"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/signal"
 	"strings"
@@ -10,7 +11,6 @@ import (
 	"syscall"
 
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 	. "github.com/smallfish06/mosquitto-go-auth/backends/constants"
 	"github.com/smallfish06/mosquitto-go-auth/backends/topics"
 	"github.com/smallfish06/mosquitto-go-auth/hashing"
@@ -59,9 +59,7 @@ type Checker struct {
 }
 
 // NewCheckers initializes a static files checker.
-func NewChecker(backends, passwordPath, aclPath string, logLevel log.Level, hasher hashing.HashComparer) (*Checker, error) {
-
-	log.SetLevel(logLevel)
+func NewChecker(backends, passwordPath, aclPath string, hasher hashing.HashComparer) (*Checker, error) {
 
 	var checker = &Checker{
 		pwPath:          passwordPath,
@@ -77,12 +75,12 @@ func NewChecker(backends, passwordPath, aclPath string, logLevel log.Level, hash
 
 	if checker.pwPath == "" {
 		checker.checkUsers = false
-		log.Infoln("[StaticFiles] passwords won't be checked")
+		slog.Info("[StaticFiles] passwords won't be checked")
 	}
 
 	if checker.aclPath == "" {
 		checker.checkACLs = false
-		log.Infoln("[StaticFiles] acls won't be checked")
+		slog.Info("[StaticFiles] acls won't be checked")
 	}
 
 	if len(strings.Split(strings.Replace(backends, " ", "", -1), ",")) > 1 {
@@ -106,7 +104,7 @@ func (o *Checker) watchSignals() {
 		select {
 		case sig := <-o.signals:
 			if sig == syscall.SIGHUP {
-				log.Debugln("[StaticFiles] got SIGHUP, reloading static files")
+				slog.Debug("[StaticFiles] got SIGHUP, reloading static files")
 				o.loadStaticFiles()
 			}
 		}
@@ -123,7 +121,7 @@ func (o *Checker) loadStaticFiles() error {
 			return errors.Errorf("read passwords: %s", err)
 		}
 
-		log.Debugf("got %d users from passwords file", count)
+		slog.Debug("got users from passwords file", "count", count)
 	}
 
 	if o.checkACLs {
@@ -132,7 +130,7 @@ func (o *Checker) loadStaticFiles() error {
 			return errors.Errorf("read acls: %s", err)
 		}
 
-		log.Debugf("got %d lines from acl file", count)
+		slog.Debug("got lines from acl file", "count", count)
 	}
 
 	return nil
@@ -163,7 +161,7 @@ func (o *Checker) readPasswords() (int, error) {
 
 		lineArr := strings.Split(text, ":")
 		if len(lineArr) != 2 {
-			log.Errorf("Read passwords error: line %d is not well formatted", index)
+			slog.Error("Read passwords error: line is not well formatted", "line", index)
 			continue
 		}
 
@@ -231,7 +229,7 @@ func (o *Checker) readAcls() (int, error) {
 
 			if !ok {
 				if o.checkUsers {
-					log.Warnf("user %s doesn't exist, skipping acls", username)
+					slog.Warn("user doesn't exist, skipping acls", "username", username)
 					// Flag username to skip topics later.
 					userExists = false
 					continue
@@ -355,7 +353,7 @@ func (o *Checker) GetUser(username, password, clientid string) (bool, error) {
 		return true, nil
 	}
 
-	log.Warnf("wrong password for user %s", username)
+	slog.Warn("wrong password for user", "username", username)
 
 	return false, nil
 

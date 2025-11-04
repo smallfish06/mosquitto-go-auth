@@ -2,7 +2,7 @@ package backends
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	log "github.com/sirupsen/logrus"
 	. "github.com/smallfish06/mosquitto-go-auth/backends/constants"
 	"github.com/smallfish06/mosquitto-go-auth/hashing"
 	. "github.com/smartystreets/goconvey/convey"
@@ -28,7 +27,7 @@ var jwtSecret = "some_jwt_secret"
 // Generate the token.
 var now = time.Now()
 var nowSecondsSinceEpoch = now.Unix()
-var expSecondsSinceEpoch int64 = nowSecondsSinceEpoch + int64(time.Hour*24/time.Second)
+var expSecondsSinceEpoch = nowSecondsSinceEpoch + int64(time.Hour*24/time.Second)
 
 var jwtToken = jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 	"iss":      "jwt-test",
@@ -190,18 +189,17 @@ func TestFilesJWTChecker(t *testing.T) {
 	// Neverthelss, we'll check that tokens are effectively parsed and correct usernames get the expected access.
 
 	authOpts := make(map[string]string)
-	logLevel := log.DebugLevel
 	hasher := hashing.NewHasher(authOpts, "files")
 
 	Convey("Given empty opts NewFilesJWTChecker should fail", t, func() {
-		_, err := NewFilesJWTChecker(authOpts, logLevel, hasher, tkOptions)
+		_, err := NewFilesJWTChecker(authOpts, hasher, tkOptions)
 		So(err, ShouldNotBeNil)
 	})
 
 	Convey("When files backend is set, missing acl path should make NewFilesJWTChecker fail", t, func() {
 		authOpts["backends"] = "files"
 
-		_, err := NewFilesJWTChecker(authOpts, logLevel, hasher, tkOptions)
+		_, err := NewFilesJWTChecker(authOpts, hasher, tkOptions)
 		So(err, ShouldNotBeNil)
 	})
 
@@ -212,7 +210,7 @@ func TestFilesJWTChecker(t *testing.T) {
 		authOpts["backends"] = "files"
 		authOpts["jwt_acl_path"] = pwPath
 
-		filesChecker, err := NewFilesJWTChecker(authOpts, logLevel, hasher, tkOptions)
+		filesChecker, err := NewFilesJWTChecker(authOpts, hasher, tkOptions)
 		So(err, ShouldBeNil)
 
 		token, err := notPresentJwtToken.SignedString([]byte(jwtSecret))
@@ -274,11 +272,11 @@ func TestLocalPostgresJWT(t *testing.T) {
 		pgAuthOpts["pg_superquery"] = "mock"
 		pgAuthOpts["pg_aclquery"] = "mock"
 
-		db, err := NewPostgres(pgAuthOpts, log.DebugLevel, hashing.NewHasher(pgAuthOpts, ""))
+		db, err := NewPostgres(pgAuthOpts, hashing.NewHasher(pgAuthOpts, ""))
 		So(err, ShouldBeNil)
 
 		Convey("Given correct option NewJWT returns an instance of jwt backend", func() {
-			jwt, err := NewLocalJWTChecker(authOpts, log.DebugLevel, hashing.NewHasher(authOpts, ""), tkOptions)
+			jwt, err := NewLocalJWTChecker(authOpts, hashing.NewHasher(authOpts, ""), tkOptions)
 			So(err, ShouldBeNil)
 
 			// Empty db
@@ -321,7 +319,7 @@ func TestLocalPostgresJWT(t *testing.T) {
 
 				Convey("But disabling superusers by removing superuri should now return false", func() {
 					authOpts["jwt_pg_superquery"] = ""
-					jwt, err := NewLocalJWTChecker(authOpts, log.DebugLevel, hashing.NewHasher(authOpts, ""), tkOptions)
+					jwt, err := NewLocalJWTChecker(authOpts, hashing.NewHasher(authOpts, ""), tkOptions)
 					So(err, ShouldBeNil)
 
 					superuser, err := jwt.GetSuperuser(token)
@@ -406,7 +404,7 @@ func TestLocalPostgresJWT(t *testing.T) {
 				authOpts["jwt_pg_superquery"] = ""
 				authOpts["jwt_pg_aclquery"] = ""
 
-				jwt, err := NewLocalJWTChecker(authOpts, log.DebugLevel, hashing.NewHasher(authOpts, ""), tkOptions)
+				jwt, err := NewLocalJWTChecker(authOpts, hashing.NewHasher(authOpts, ""), tkOptions)
 				So(err, ShouldBeNil)
 
 				Convey("So checking against them should give false and true for any user", func() {
@@ -474,11 +472,11 @@ func TestLocalMysqlJWT(t *testing.T) {
 		mysqlAuthOpts["mysql_superquery"] = "mock"
 		mysqlAuthOpts["mysql_aclquery"] = "mock"
 
-		db, err := NewMysql(mysqlAuthOpts, log.DebugLevel, hashing.NewHasher(mysqlAuthOpts, ""))
+		db, err := NewMysql(mysqlAuthOpts, hashing.NewHasher(mysqlAuthOpts, ""))
 		So(err, ShouldBeNil)
 
 		Convey("Given correct option NewJWT returns an instance of jwt backend", func() {
-			jwt, err := NewLocalJWTChecker(authOpts, log.DebugLevel, hashing.NewHasher(authOpts, ""), tkOptions)
+			jwt, err := NewLocalJWTChecker(authOpts, hashing.NewHasher(authOpts, ""), tkOptions)
 			So(err, ShouldBeNil)
 
 			// Empty db
@@ -524,7 +522,7 @@ func TestLocalMysqlJWT(t *testing.T) {
 				So(superuser, ShouldBeTrue)
 				Convey("But disabling superusers by removing superuri should now return false", func() {
 					authOpts["jwt_mysql_superquery"] = ""
-					jwt, err := NewLocalJWTChecker(authOpts, log.DebugLevel, hashing.NewHasher(authOpts, ""), tkOptions)
+					jwt, err := NewLocalJWTChecker(authOpts, hashing.NewHasher(authOpts, ""), tkOptions)
 					So(err, ShouldBeNil)
 
 					superuser, err := jwt.GetSuperuser(token)
@@ -610,7 +608,7 @@ func TestLocalMysqlJWT(t *testing.T) {
 				authOpts["jwt_mysql_superquery"] = ""
 				authOpts["jwt_mysql_aclquery"] = ""
 
-				jwt, err := NewLocalJWTChecker(authOpts, log.DebugLevel, hashing.NewHasher(authOpts, ""), tkOptions)
+				jwt, err := NewLocalJWTChecker(authOpts, hashing.NewHasher(authOpts, ""), tkOptions)
 				So(err, ShouldBeNil)
 
 				Convey("So checking against them should give false and true for any user", func() {
@@ -681,7 +679,7 @@ func TestJWTAllJsonServer(t *testing.T) {
 				var data interface{}
 				var params map[string]interface{}
 
-				body, _ := ioutil.ReadAll(r.Body)
+				body, _ := io.ReadAll(r.Body)
 				defer r.Body.Close()
 
 				err := json.Unmarshal(body, &data)
@@ -764,7 +762,7 @@ func TestJWTAllJsonServer(t *testing.T) {
 	authOpts["jwt_host"] = strings.Replace(mockServer.URL, "http://", "", -1)
 
 	Convey("Given correct options an http backend instance should be returned", t, func() {
-		hb, err := NewJWT(authOpts, log.DebugLevel, hashing.NewHasher(authOpts, ""), version)
+		hb, err := NewJWT(authOpts, hashing.NewHasher(authOpts, ""), version)
 		So(err, ShouldBeNil)
 
 		Convey("Given correct password/username, get user should return true", func() {
@@ -791,7 +789,7 @@ func TestJWTAllJsonServer(t *testing.T) {
 
 			Convey("But disabling superusers by removing superuri should now return false", func() {
 				authOpts["jwt_superuser_uri"] = ""
-				hb, err := NewJWT(authOpts, log.DebugLevel, hashing.NewHasher(authOpts, ""), version)
+				hb, err := NewJWT(authOpts, hashing.NewHasher(authOpts, ""), version)
 				So(err, ShouldBeNil)
 
 				superuser, err := hb.GetSuperuser(username)
@@ -862,7 +860,7 @@ func TestJWTJsonStatusOnlyServer(t *testing.T) {
 		var data interface{}
 		var params map[string]interface{}
 
-		body, _ := ioutil.ReadAll(r.Body)
+		body, _ := io.ReadAll(r.Body)
 		defer r.Body.Close()
 
 		err := json.Unmarshal(body, &data)
@@ -907,7 +905,7 @@ func TestJWTJsonStatusOnlyServer(t *testing.T) {
 	authOpts["jwt_aclcheck_uri"] = "/acl"
 
 	Convey("Given correct options an http backend instance should be returned", t, func() {
-		hb, err := NewJWT(authOpts, log.DebugLevel, hashing.NewHasher(authOpts, ""), version)
+		hb, err := NewJWT(authOpts, hashing.NewHasher(authOpts, ""), version)
 		So(err, ShouldBeNil)
 		So(hb.GetName(), ShouldEqual, "JWT remote")
 
@@ -935,7 +933,7 @@ func TestJWTJsonStatusOnlyServer(t *testing.T) {
 
 			Convey("But disabling superusers by removing superuri should now return false", func() {
 				authOpts["jwt_superuser_uri"] = ""
-				hb, err := NewJWT(authOpts, log.DebugLevel, hashing.NewHasher(authOpts, ""), version)
+				hb, err := NewJWT(authOpts, hashing.NewHasher(authOpts, ""), version)
 				So(err, ShouldBeNil)
 
 				superuser, err := hb.GetSuperuser(username)
@@ -1006,7 +1004,7 @@ func TestJWTJsonTextResponseServer(t *testing.T) {
 		var data interface{}
 		var params map[string]interface{}
 
-		body, _ := ioutil.ReadAll(r.Body)
+		body, _ := io.ReadAll(r.Body)
 		defer r.Body.Close()
 
 		err := json.Unmarshal(body, &data)
@@ -1053,7 +1051,7 @@ func TestJWTJsonTextResponseServer(t *testing.T) {
 	authOpts["jwt_aclcheck_uri"] = "/acl"
 
 	Convey("Given correct options an http backend instance should be returned", t, func() {
-		hb, err := NewJWT(authOpts, log.DebugLevel, hashing.NewHasher(authOpts, ""), version)
+		hb, err := NewJWT(authOpts, hashing.NewHasher(authOpts, ""), version)
 		So(err, ShouldBeNil)
 		So(hb.GetName(), ShouldEqual, "JWT remote")
 
@@ -1081,7 +1079,7 @@ func TestJWTJsonTextResponseServer(t *testing.T) {
 
 			Convey("But disabling superusers by removing superuri should now return false", func() {
 				authOpts["jwt_superuser_uri"] = ""
-				hb, err := NewJWT(authOpts, log.DebugLevel, hashing.NewHasher(authOpts, ""), version)
+				hb, err := NewJWT(authOpts, hashing.NewHasher(authOpts, ""), version)
 				So(err, ShouldBeNil)
 
 				superuser, err := hb.GetSuperuser(username)
@@ -1209,7 +1207,7 @@ func TestJWTFormJsonResponseServer(t *testing.T) {
 	authOpts["jwt_aclcheck_uri"] = "/acl"
 
 	Convey("Given correct options an http backend instance should be returned", t, func() {
-		hb, err := NewJWT(authOpts, log.DebugLevel, hashing.NewHasher(authOpts, ""), version)
+		hb, err := NewJWT(authOpts, hashing.NewHasher(authOpts, ""), version)
 		So(err, ShouldBeNil)
 		So(hb.GetName(), ShouldEqual, "JWT remote")
 
@@ -1237,7 +1235,7 @@ func TestJWTFormJsonResponseServer(t *testing.T) {
 
 			Convey("But disabling superusers by removing superuri should now return false", func() {
 				authOpts["jwt_superuser_uri"] = ""
-				hb, err := NewJWT(authOpts, log.DebugLevel, hashing.NewHasher(authOpts, ""), version)
+				hb, err := NewJWT(authOpts, hashing.NewHasher(authOpts, ""), version)
 				So(err, ShouldBeNil)
 
 				superuser, err := hb.GetSuperuser(username)
@@ -1348,7 +1346,7 @@ func TestJWTFormStatusOnlyServer(t *testing.T) {
 	authOpts["jwt_aclcheck_uri"] = "/acl"
 
 	Convey("Given correct options an http backend instance should be returned", t, func() {
-		hb, err := NewJWT(authOpts, log.DebugLevel, hashing.NewHasher(authOpts, ""), version)
+		hb, err := NewJWT(authOpts, hashing.NewHasher(authOpts, ""), version)
 		So(err, ShouldBeNil)
 		So(hb.GetName(), ShouldEqual, "JWT remote")
 
@@ -1376,7 +1374,7 @@ func TestJWTFormStatusOnlyServer(t *testing.T) {
 
 			Convey("But disabling superusers by removing superuri should now return false", func() {
 				authOpts["jwt_superuser_uri"] = ""
-				hb, err := NewJWT(authOpts, log.DebugLevel, hashing.NewHasher(authOpts, ""), version)
+				hb, err := NewJWT(authOpts, hashing.NewHasher(authOpts, ""), version)
 				So(err, ShouldBeNil)
 
 				superuser, err := hb.GetSuperuser(username)
@@ -1458,7 +1456,7 @@ func TestJWTFormStatusOnlyServer(t *testing.T) {
 	Convey("Given empty jwt_host field and correct iss claim authorization should work", t, func() {
 
 		authOpts["jwt_host_whitelist"] = serverHostAddr + ", sometherhost"
-		hbWhitelistedHost, err := NewJWT(authOpts, log.DebugLevel, hashing.NewHasher(authOpts, ""), version)
+		hbWhitelistedHost, err := NewJWT(authOpts, hashing.NewHasher(authOpts, ""), version)
 		So(err, ShouldBeNil)
 
 		Convey("Given correct password/username and iss host is whitelisted, get user should return true", func() {
@@ -1478,7 +1476,7 @@ func TestJWTFormStatusOnlyServer(t *testing.T) {
 		})
 
 		authOpts["jwt_port"] = "12345"
-		hbWhitelistedHostBadConfigPort, err := NewJWT(authOpts, log.DebugLevel, hashing.NewHasher(authOpts, ""), version)
+		hbWhitelistedHostBadConfigPort, err := NewJWT(authOpts, hashing.NewHasher(authOpts, ""), version)
 		So(err, ShouldBeNil)
 
 		Convey("Given jwt_port is present in config, port from iss field should be used anyway", func() {
@@ -1490,7 +1488,7 @@ func TestJWTFormStatusOnlyServer(t *testing.T) {
 		})
 
 		authOpts["jwt_host_whitelist"] = "*"
-		hbAnyHost, err := NewJWT(authOpts, log.DebugLevel, hashing.NewHasher(authOpts, ""), version)
+		hbAnyHost, err := NewJWT(authOpts, hashing.NewHasher(authOpts, ""), version)
 		So(err, ShouldBeNil)
 
 		Convey("Given correct password/username and all hosts are allowed, get user should return true", func() {
@@ -1502,7 +1500,7 @@ func TestJWTFormStatusOnlyServer(t *testing.T) {
 		})
 
 		authOpts["jwt_host_whitelist"] = "otherhost1, otherhost2"
-		hbBadHost, err := NewJWT(authOpts, log.DebugLevel, hashing.NewHasher(authOpts, ""), version)
+		hbBadHost, err := NewJWT(authOpts, hashing.NewHasher(authOpts, ""), version)
 		So(err, ShouldBeNil)
 
 		Convey("Given host from iss is not whitelisted, get user should fail even if the credentials are correct", func() {
@@ -1572,7 +1570,7 @@ func TestJWTFormTextResponseServer(t *testing.T) {
 	authOpts["jwt_aclcheck_uri"] = "/acl"
 
 	Convey("Given correct options an http backend instance should be returned", t, func() {
-		hb, err := NewJWT(authOpts, log.DebugLevel, hashing.NewHasher(authOpts, ""), version)
+		hb, err := NewJWT(authOpts, hashing.NewHasher(authOpts, ""), version)
 		So(err, ShouldBeNil)
 
 		Convey("Given correct password/username, get user should return true", func() {
@@ -1599,7 +1597,7 @@ func TestJWTFormTextResponseServer(t *testing.T) {
 
 			Convey("But disabling superusers by removing superuri should now return false", func() {
 				authOpts["jwt_superuser_uri"] = ""
-				hb, err := NewJWT(authOpts, log.DebugLevel, hashing.NewHasher(authOpts, ""), version)
+				hb, err := NewJWT(authOpts, hashing.NewHasher(authOpts, ""), version)
 				So(err, ShouldBeNil)
 
 				superuser, err := hb.GetSuperuser(username)
@@ -1712,7 +1710,7 @@ func TestJWTHttpTimeout(t *testing.T) {
 	authOpts["jwt_http_timeout"] = "1"
 
 	Convey("Given correct options an http backend instance should be returned", t, func() {
-		hb, err := NewJWT(authOpts, log.DebugLevel, hashing.NewHasher(authOpts, ""), version)
+		hb, err := NewJWT(authOpts, hashing.NewHasher(authOpts, ""), version)
 		So(err, ShouldBeNil)
 
 		Convey("JWT remote test timeout parameter: YES TIMEOUT", func() {
@@ -1727,7 +1725,7 @@ func TestJWTHttpTimeout(t *testing.T) {
 	authOpts["jwt_http_timeout"] = "2"
 
 	Convey("Given correct options an http backend instance should be returned", t, func() {
-		hb, err := NewJWT(authOpts, log.DebugLevel, hashing.NewHasher(authOpts, ""), version)
+		hb, err := NewJWT(authOpts, hashing.NewHasher(authOpts, ""), version)
 		So(err, ShouldBeNil)
 
 		Convey("JWT remote test timeout parameter: NO TIMEOUT", func() {

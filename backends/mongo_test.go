@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	log "github.com/sirupsen/logrus"
 	. "github.com/smallfish06/mosquitto-go-auth/backends/constants"
 	"github.com/smallfish06/mosquitto-go-auth/hashing"
 	. "github.com/smartystreets/goconvey/convey"
@@ -43,7 +42,7 @@ func TestMongoRaw(t *testing.T) {
 
 	Convey("Given valid params NewMongo should return a Mongo backend instance", t, func() {
 
-		mongo, err := NewMongo(authOpts, log.DebugLevel, hashing.NewHasher(authOpts, "mongo"))
+		mongo, err := NewMongo(authOpts, hashing.NewHasher(authOpts, "mongo"))
 		So(err, ShouldBeNil)
 		mongo.Conn.Database(mongo.DBName).Drop(context.TODO())
 		mongoDb := mongo.Conn.Database(mongo.DBName)
@@ -239,7 +238,7 @@ func TestMongoUtf8(t *testing.T) {
 
 	Convey("Given valid params NewMongo should return a Mongo backend instance", t, func() {
 
-		mongo, err := NewMongo(authOpts, log.DebugLevel, hashing.NewHasher(authOpts, "mongo"))
+		mongo, err := NewMongo(authOpts, hashing.NewHasher(authOpts, "mongo"))
 		So(err, ShouldBeNil)
 		mongo.Conn.Database(mongo.DBName).Drop(context.TODO())
 		mongoDb := mongo.Conn.Database(mongo.DBName)

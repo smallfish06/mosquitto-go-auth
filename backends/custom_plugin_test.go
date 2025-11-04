@@ -3,7 +3,6 @@ package backends
 import (
 	"testing"
 
-	log "github.com/sirupsen/logrus"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -20,7 +19,7 @@ func TestCustomPlugin(t *testing.T) {
 	acc := int32(1)
 
 	Convey("Loading  dummy plugin should work", t, func() {
-		plugin, err := NewCustomPlugin(authOpts, log.DebugLevel)
+		plugin, err := NewCustomPlugin(authOpts)
 		So(err, ShouldBeNil)
 
 		userCheck, err := plugin.GetUser(username, password, clientid)

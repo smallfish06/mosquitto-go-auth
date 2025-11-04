@@ -1,4 +1,4 @@
-# Forked Version of https://github.com/smallfish06/mosquitto-go-auth
+# Forked Version of https://github.com/iegomez/mosquitto-go-auth
 
 # Mosquitto Go Auth
 
@@ -93,8 +93,13 @@ Please open an issue with the `feature` or `enhancement` tag to request new back
 This package uses `Go modules` to manage dependencies.
 As it interacts with `mosquitto`, it makes use of `cgo`. Also, it (optionally) uses Redis for cache purposes.
 
-*Important*: as of 23/05/2025, or May 23, 2025, I've switched Go cache backing package to https://github.com/jellydator/ttlcache, which makes use of generics.
-Following this change, I've bumped Go version to 1.24.3 and might explore opportunities to refactor code using additions since the last set version in this lib which was 1.18.
+*Important*: This fork has been updated with the following changes:
+- Go version: 1.24.0
+- Protobuf: `google.golang.org/protobuf` v1.36.10
+- gRPC: `google.golang.org/grpc` v1.76.0
+- gRPC middleware: `github.com/grpc-ecosystem/go-grpc-middleware/v2` v2.3.2
+- Logging: Uses Go's standard `log/slog` package for structured logging in gRPC backend
+- Cache backing package: https://github.com/jellydator/ttlcache (with generics support)
 
 
 ### Build
@@ -157,17 +162,27 @@ If you are running another distro or need more details on building mosquitto, pl
 Only Linux (tested in Debian, Ubuntu and Mint ùs) and MacOS are supported.
 
 Before attempting to build the plugin, make sure you have go installed on the system.
-The minimum required Go version for the current release is 1.18.
+The minimum required Go version for the current release is 1.24.0.
 To check which version (if any) of Go is installed on the system, simply run the following:
 
 ```
 go version
 ```
 
-If Go is not installed or the installed version is older than 1.18, please update it.
+If Go is not installed or the installed version is older than 1.24.0, please update it.
 You can retrieve and install the latest version of Go from the official [Go download website](https://go.dev/dl/) which also have installation instructions.
 
-This will fetch the go dependecies and then build the `go-auth.so` shared object:
+#### Building the plugin
+
+First, generate the necessary protobuf files for gRPC:
+
+```
+go generate ./...
+```
+
+This will generate the required gRPC code from the protocol buffer definitions.
+
+Then fetch the go dependencies and build the `go-auth.so` shared object:
 
 ```
 make
@@ -396,7 +411,9 @@ auth_opt_pg_hasher_parallelism            # degree of parallelism (i.e. number o
 
 #### Logging
 
-You can set the log level with the `log_level` option. Valid values are: `debug`, `info`, `warn`, `error`, `fatal` and `panic`. If not set, default value is `info`.
+You can set the log level with the `log_level` option. Valid values are: `debug`, `info`, `warn`, and `error`. If not set, default value is `info`.
+
+**Note:** This project uses Go's standard `log/slog` package for structured logging. The gRPC backend has been fully migrated to use `slog` for all logging operations, providing structured and context-aware logging output.
 
 ```
 auth_opt_log_level debug
@@ -1266,6 +1283,16 @@ requirepass go_auth_test
 
 To test a Redis Cluster the plugin expects that there's a cluster with 3 masters at `localhost:7000`, `localhost:7001` and `localhost:7002`. The easiest way to achieve this is just running some dockerized cluster such as https://github.com/Grokzen/docker-redis-cluster, which I used to test that the cluster mode is working, but building a local cluster should work just fine. I know that this test is pretty bad, and so are the general testing expectations. I'm looking to replace the whole suite with a proper dockerized environment that can also run automatic tests on pushes to ensure any changes are safe, but that will take some time.
 
+#### Testing gRPC backend
+
+Before running gRPC backend tests, ensure that the protocol buffer files are generated:
+
+```bash
+go generate ./...
+```
+
+This will generate the required `auth.pb.go` and `auth_grpc.pb.go` files from `grpc/auth.proto`.
+
 
 ### MongoDB
 
@@ -1387,16 +1414,16 @@ Using the `plugin` package from Go, this project allows to write your own custom
 compile it as a shared object and link to it from mosquitto-go-auth.
 Check Go pluing [docs](https://golang.org/pkg/plugin/) for more details.
 
-In order to create your own plugin, you need to declare a main package that exposes the following functions (and uses the logrus package for logging):
+In order to create your own plugin, you need to declare a main package that exposes the following functions (and uses the slog package for logging):
 
 ```go
 package main
 
 import (
-   log "github.com/sirupsen/logrus"
+   "log/slog"
 )
 
-func Init(authOpts map[string]string, logLevel log.Level) error {
+func Init(authOpts map[string]string, logLevel slog.Level) error {
    //Initialize your plugin with the necessary options
    return nil
 }
@@ -1446,6 +1473,8 @@ As this option is custom written by yourself, there are no tests included in the
 
 The `grpc` backend allows to check for user auth, superuser and acls against a gRPC service.
 
+**Note:** This backend uses the latest protobuf (`google.golang.org/protobuf` v1.36.10) and gRPC (`google.golang.org/grpc` v1.76.0) libraries, along with `go-grpc-middleware/v2` for interceptors. All logging is done using Go's standard `log/slog` package.
+
 The following options are supported:
 
 
@@ -1467,12 +1496,23 @@ and let the underlying package manage automatic reconnections.
 
 #### Service
 
-The gRPC server should implement the service defined at `grpc/auth.proto`, which looks like this:
+The gRPC server should implement the service defined at `grpc/auth.proto`. 
+
+**Important:** The protocol buffer files must be generated using:
+```bash
+go generate ./...
+```
+
+This uses the modern protobuf compiler with separate `--go_out` and `--go-grpc_out` flags for generating protocol buffer and gRPC code respectively.
+
+The service definition looks like this:
 
 ```proto
 syntax = "proto3";
 
 package grpc;
+
+option go_package = "github.com/smallfish06/mosquitto-go-auth/grpc";
 
 import "google/protobuf/empty.proto";
 
@@ -1652,7 +1692,8 @@ This allows building containers for x86_64/AMD64, ARMv6, ARMv7 and ARM64 on a si
 
 #### Step-by-step guide:
 * clone this repository: `git clone https://github.com/smallfish06/mosquitto-go-auth.git`
-* change into the project folder `cd mosquitto-go-auth`
+* change into the project folder: `cd mosquitto-go-auth`
+* generate protobuf files: `go generate ./...`
 * build containers for your desired architectures: `docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 .`
 
 #### Base Image

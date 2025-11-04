@@ -1,9 +1,10 @@
 package backends
 
 import (
+	"testing"
+
 	. "github.com/smallfish06/mosquitto-go-auth/backends/constants"
 	. "github.com/smartystreets/goconvey/convey"
-	"testing"
 )
 
 func TestLDAP(t *testing.T) {
@@ -24,7 +25,7 @@ func TestLDAP(t *testing.T) {
 		"ldap_superuser_filter":            "(&(cn=%s)(memberOf=cn=superuser,ou=groups,dc=example,dc=org))",
 		"ldap_acl_topic_pattern_attribute": "mqttTopicPattern",
 		"ldap_acl_acc_attribute":           "mqttTopicAcc",
-	}, 5)
+	})
 
 	if err != nil {
 		t.Errorf("Error creating LDAP backend: %s", err)
