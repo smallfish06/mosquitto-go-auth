@@ -127,9 +127,9 @@ jobs:
         id: meta
         run: |
           if [ "${{ github.event_name }}" == "release" ]; then
-            VERSION=${GITHUB_REF#refs/tags/}
+            VERSION=${GITHUB_REF#refs/tags/}-${{ env.MOSQUITTO_VERSION }}
           else
-            VERSION="dev"
+            VERSION="dev-${{ env.MOSQUITTO_VERSION }}"
           fi
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
           
