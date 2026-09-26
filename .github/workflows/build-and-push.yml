@@ -17,7 +17,7 @@ env:
 jobs:
   build-matrix:
     name: Build Mosquitto ${{ matrix.mosquitto_version }} - ${{ matrix.platform }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -100,7 +100,7 @@ jobs:
 
   create-manifest:
     name: Create and Push Multi-Platform Manifest - Mosquitto ${{ matrix.mosquitto_version }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: build-matrix
     if: github.event_name == 'release' || github.event.inputs.push_images == 'true'
     strategy:
@@ -181,7 +181,7 @@ jobs:
 
   build-summary:
     name: Build Summary
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [build-matrix, create-manifest]
     if: always()
     

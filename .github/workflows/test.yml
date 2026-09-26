@@ -9,7 +9,7 @@ on:
 jobs:
   test-versions:
     name: Mosquitto ${{ matrix.mosquitto_version }} on ${{ matrix.platform }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -80,7 +80,7 @@ jobs:
 
   integration-test:
     name: Integration Test - Mosquitto ${{ matrix.mosquitto_version }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -107,7 +107,7 @@ jobs:
 
   test-summary:
     name: Test Summary
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [test-versions, integration-test]
     if: always()
     
